@@ -7,6 +7,7 @@ export interface TrackPoint {
   x: number; // 相对画布中心的屏幕偏移
   y: number;
   alt: number; // 地平线以下不画
+  az: number; // 3D 天穹重投球面用
 }
 
 export interface StarTrack {
@@ -48,7 +49,7 @@ export function computeTrackAround(
       alt = p.alt;
     }
     const pr = projectAltAz(alt, az, rx, ry, mirror);
-    return { x: pr.x, y: pr.y, alt };
+    return { x: pr.x, y: pr.y, alt, az };
   });
   return { id, points, pastCount };
 }

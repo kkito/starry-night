@@ -63,7 +63,7 @@ describe('drawSky 轨迹绘制', () => {
   const makeTrack = (alts: number[]): StarTrack => ({
     id: 't',
     pastCount: 6,
-    points: alts.map((alt, i) => ({ x: -120 + i * 20, y: 0, alt })),
+    points: alts.map((alt, i) => ({ x: -120 + i * 20, y: 0, alt, az: 180 })),
   });
 
   it('过去段实线、未来段虚线（setLineDash [5,5]）', () => {
