@@ -4,6 +4,7 @@ export interface CatalogStar {
   id: string;
   name?: string;
   mag: number;
+  bv?: number;
   raDeg: number;
   decDeg: number;
 }
