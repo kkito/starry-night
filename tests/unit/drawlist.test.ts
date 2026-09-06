@@ -22,11 +22,11 @@ describe('drawlist', () => {
   });
 
   it('buildDrawList 投影、label 阈值、bv 缺省', () => {
-    const list = buildDrawList([star({ az: 0, alt: 45, mag: 0 }), star({ id: 's2', az: 90, alt: 0, mag: 2 })], 100);
-    expect(list[0]).toMatchObject({ x: 0, y: -50, rPx: 4.6, color: '#f8f7ff', label: true });
-    expect(list[1]!).toMatchObject({ x: -100, y: 0, label: false }); // E 在左
+    const list = buildDrawList([star({ az: 0, alt: 45, mag: 0 }), star({ id: 's2', az: 90, alt: 0, mag: 2 })], 100, 200);
+    expect(list[0]).toMatchObject({ x: 0, y: -100, rPx: 4.6, color: '#f8f7ff', label: true });
+    expect(list[1]!).toMatchObject({ x: -100, y: 0, label: false }); // E 在左（水平半径）
     expect(list[1]!.name).toBeUndefined();
-    const noBv = buildDrawList([star({ bv: undefined })], 100);
+    const noBv = buildDrawList([star({ bv: undefined })], 100, 100);
     expect(noBv[0]!.color).toBe('#f8f7ff'); // bv 缺失按 0.4
   });
 });

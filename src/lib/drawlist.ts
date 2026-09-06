@@ -34,9 +34,9 @@ const EPS = 1e-9;
 // 规范化浮点误差：-0/极小残差归零，保证轴上坐标精确
 const snap = (v: number): number => (Math.abs(v) < EPS ? 0 : v);
 
-export function buildDrawList(stars: StarWithBv[], R: number): DrawStar[] {
+export function buildDrawList(stars: StarWithBv[], rx: number, ry: number): DrawStar[] {
   return stars.map((s) => {
-    const p = projectAltAz(s.alt, s.az, R);
+    const p = projectAltAz(s.alt, s.az, rx, ry);
     return {
       id: s.id,
       ...(s.name !== undefined ? { name: s.name } : {}),

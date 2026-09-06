@@ -30,5 +30,5 @@ export function StarTableDialog({ open, stars, onClose }: { open: boolean; stars
   );
 }
 
-const overlay: CSSProperties = { position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' };
-const panel: CSSProperties = { background: '#1a2136', padding: 16, borderRadius: 8, maxHeight: '80vh', overflow: 'auto', color: '#e8ecf8' };
+const overlay: CSSProperties = { position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' };
+const panel: CSSProperties = { background: '#1a2136', padding: 16, borderRadius: '12px 12px 0 0', width: '100%', maxWidth: 640, maxHeight: '85dvh', overflowY: 'auto', color: '#e8ecf8' };

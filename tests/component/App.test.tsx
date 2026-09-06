@@ -18,18 +18,21 @@ describe('App', () => {
     expect(screen.getByTestId('summary').textContent).toMatch(/可见星/);
   });
 
-  it('设置按钮打开弹框，应用后摘要更新', () => {
+  it('菜单打开设置弹框，应用后摘要更新', () => {
     render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: '设置' }));
+    fireEvent.click(screen.getByRole('button', { name: '菜单' }));
+    fireEvent.click(screen.getByRole('menu').querySelector('button')!);
     const lat = screen.getByLabelText('纬度');
     fireEvent.change(lat, { target: { value: '-33.87' } });
     fireEvent.click(screen.getByRole('button', { name: '应用' }));
     expect(screen.getByTestId('summary').textContent).toContain('-33.87');
   });
 
-  it('星表按钮打开弹框', () => {
+  it('菜单打开星表弹框', () => {
     render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: '星表' }));
+    fireEvent.click(screen.getByRole('button', { name: '菜单' }));
+    const menu = screen.getByRole('menu');
+    fireEvent.click(menu.querySelectorAll('button')[1]!);
     expect(screen.getByRole('dialog', { name: '星表' })).toBeTruthy();
   });
 });

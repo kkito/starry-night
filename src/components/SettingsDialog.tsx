@@ -101,6 +101,6 @@ export function SettingsDialog({ open, view, onClose, onApply }: Props) {
   );
 }
 
-const overlay: CSSProperties = { position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' };
-const panel: CSSProperties = { display: 'flex', flexDirection: 'column', gap: 8, background: '#1a2136', padding: 16, borderRadius: 8, minWidth: 260 };
+const overlay: CSSProperties = { position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' };
+const panel: CSSProperties = { display: 'flex', flexDirection: 'column', gap: 8, background: '#1a2136', padding: 16, borderRadius: '12px 12px 0 0', width: '100%', maxWidth: 640, maxHeight: '85dvh', overflowY: 'auto' };
 const row: CSSProperties = { display: 'flex', gap: 8, alignItems: 'flex-end' };

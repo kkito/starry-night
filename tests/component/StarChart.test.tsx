@@ -5,7 +5,6 @@ import { drawSky } from '../../src/components/StarChart';
 import { StarChart } from '../../src/components/StarChart';
 import { buildDrawList, type StarWithBv } from '../../src/lib/drawlist';
 import { makeMockCtx, installCanvasMock, type RecordedCall } from './helpers';
-import type { SkyStar } from '../../src/core/sky';
 
 const star = (over: Partial<StarWithBv>): StarWithBv => ({ id: 's', ra: 0, dec: 0, az: 0, alt: 90, mag: 0, ...over });
 
@@ -14,18 +13,22 @@ beforeAll(() => {
   installCanvasMock({ ctx });
 });
 
-describe('drawSky', () => {
+describe('drawSky（椭圆投影）', () => {
   const { calls, ctx } = makeMockCtx();
-  const stars = buildDrawList([star({ name: 'Vega', az: 0, alt: 45, mag: 0, bv: 0 })], 270);
-  drawSky(ctx, { size: 560, stars });
+  // 正方形视口 560×560：rx=ry=270，便于沿用数值断言
+  const stars = buildDrawList([star({ name: 'Vega', az: 0, alt: 45, mag: 0, bv: 0 })], 270, 270);
+  drawSky(ctx, { width: 560, height: 560, stars });
 
-  it('画地面矩形、天空圆、三条高度环', () => {
+  it('画地面矩形、天空椭圆、三条高度环', () => {
     expect(calls.some((c) => c.method === 'fillRect')).toBe(true);
-    const arcs = calls.filter((c) => c.method === 'arc') as (RecordedCall & { args: number[] })[];
-    const radii = arcs.map((a) => a.args[2]!);
-    expect(radii).toContain(270);           // 地平线
-    expect(radii).toContain(180);           // alt=30
-    expect(radii).toContain(90);            // alt=60
+    const ellipses = calls.filter((c) => c.method === 'ellipse') as (RecordedCall & { args: number[] })[];
+    const rxs = ellipses.map((e) => e.args[2]!);
+    expect(rxs).toContain(270);           // 地平线
+    expect(rxs).toContain(180);           // alt=30
+    expect(rxs).toContain(90);            // alt=60
+    // 椭圆第二半径 = ry
+    const horizon = ellipses.find((e) => e.args[2] === 270)!;
+    expect(horizon.args[3]).toBe(270);
   });
 
   it('标注 N/E/S/W 与高度刻度', () => {
@@ -33,14 +36,22 @@ describe('drawSky', () => {
     for (const t of ['N', 'E', 'S', 'W', '0°', '30°', '60°']) expect(texts).toContain(t);
   });
 
-  it('星点圆心 = projectAltAz 输出 + 圆心偏移', () => {
+  it('星点圆心 = projectAltAz 输出 + 中心偏移', () => {
     const arcs = calls.filter((c) => c.method === 'arc') as (RecordedCall & { args: number[] })[];
-    // Vega alt=45 az=0, R=270 → 相对 (0,-135)，圆心 (280,280)
+    // Vega alt=45 az=0, rx=ry=270 → 相对 (0,-135)，中心 (280,280)
     expect(arcs.some((a) => Math.abs(a.args[0]! - 280) < 1e-6 && Math.abs(a.args[1]! - 145) < 1e-6)).toBe(true);
   });
 
   it('亮星名被绘制', () => {
     expect(calls.some((c) => c.method === 'fillText' && c.args[0] === 'Vega')).toBe(true);
+  });
+
+  it('非正方形视口：环用椭圆半径', () => {
+    const { calls: c2, ctx: ctx2 } = makeMockCtx();
+    drawSky(ctx2, { width: 400, height: 800, stars: [] });
+    const ellipses = c2.filter((c) => c.method === 'ellipse') as (RecordedCall & { args: number[] })[];
+    const horizon = ellipses.find((e) => e.args[2] === 190)!; // rx = 200-10
+    expect(horizon.args[3]).toBe(390);                        // ry = 400-10
   });
 });
 
@@ -48,8 +59,8 @@ afterEach(cleanup);
 
 describe('StarChart 悬停', () => {
   it('鼠标移到星点附近显示 tooltip', () => {
-    const stars = buildDrawList([star({ id: 'zenith', name: 'Zenith Star', alt: 90, mag: 0 })], 270);
-    render(<StarChart stars={stars} />);
+    const stars = buildDrawList([star({ id: 'zenith', name: 'Zenith Star', alt: 90, mag: 0 })], 270, 270);
+    render(<StarChart stars={stars} width={560} height={560} />);
     const canvas = screen.getByTestId('star-canvas');
     fireEvent.mouseMove(canvas, { clientX: 280, clientY: 280 }); // 天顶 = 画布中心
     expect(screen.getByTestId('star-tooltip')).toBeTruthy();
@@ -57,8 +68,8 @@ describe('StarChart 悬停', () => {
   });
 
   it('移开（onMouseLeave）后 tooltip 消失', () => {
-    const stars = buildDrawList([star({ id: 'z', alt: 90, mag: 0 })], 270);
-    render(<StarChart stars={stars} />);
+    const stars = buildDrawList([star({ id: 'z', alt: 90, mag: 0 })], 270, 270);
+    render(<StarChart stars={stars} width={560} height={560} />);
     const canvas = screen.getByTestId('star-canvas');
     fireEvent.mouseMove(canvas, { clientX: 280, clientY: 280 });
     fireEvent.mouseLeave(canvas);
