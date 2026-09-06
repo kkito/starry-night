@@ -5,11 +5,14 @@ import { COLORS, FONTS, buttonStyle } from '../lib/tokens';
 
 export type AspectPref = 'auto' | 'landscape' | 'portrait';
 export type ShapePref = 'ellipse' | 'circle';
+/** live：跟随当前时间（定期刷新）；fixed：使用选定的本地时间 */
+export type TimeMode = 'live' | 'fixed';
 
 export interface ViewParams {
   lat: number;
   lon: number;
   date: string;
+  timeMode: TimeMode;
   topN: number;
   aspect: AspectPref;
   /** 是否显示太阳系天体（八大行星 + 月亮） */
@@ -33,6 +36,7 @@ export function validateView(v: ViewParams): string | null {
   if (!Number.isFinite(v.lat) || v.lat < -90 || v.lat > 90) return 'lat 必须在 [-90, 90]';
   if (!Number.isFinite(v.lon) || v.lon < -180 || v.lon > 180) return 'lon 必须在 [-180, 180]';
   if (!v.date || Number.isNaN(new Date(v.date).getTime())) return 'date 无效';
+  if (!['live', 'fixed'].includes(v.timeMode)) return 'timeMode 无效';
   if (!Number.isFinite(v.topN) || v.topN < 1 || v.topN > 500) return 'topN 必须在 [1, 500]';
   if (!['auto', 'landscape', 'portrait'].includes(v.aspect)) return 'aspect 无效';
   if (!['ellipse', 'circle'].includes(v.shape)) return 'shape 无效';
@@ -51,7 +55,7 @@ interface Props {
 type Draft = Omit<{ [K in keyof ViewParams]: string }, 'showSolar' | 'mirror'> & { showSolar: boolean; mirror: boolean };
 
 function toDraft(v: ViewParams): Draft {
-  return { lat: String(v.lat), lon: String(v.lon), date: v.date, topN: String(v.topN), aspect: v.aspect, showSolar: v.showSolar, mirror: v.mirror, shape: v.shape };
+  return { lat: String(v.lat), lon: String(v.lon), date: v.date, timeMode: v.timeMode, topN: String(v.topN), aspect: v.aspect, showSolar: v.showSolar, mirror: v.mirror, shape: v.shape };
 }
 
 const fmt = (n: number) => String(Number(n.toFixed(4)));
@@ -96,7 +100,8 @@ export function SettingsDialog({ open, view, onClose, onApply, onOpenTable }: Pr
     const parsed: ViewParams = {
       lat: Number(draft.lat),
       lon: Number(draft.lon),
-      date: draft.date,
+      date: draft.timeMode === 'live' ? toLocalInput(new Date()) : draft.date,
+      timeMode: draft.timeMode as ViewParams['timeMode'],
       topN: Number(draft.topN),
       aspect: draft.aspect as ViewParams['aspect'],
       showSolar: draft.showSolar,
@@ -145,8 +150,22 @@ export function SettingsDialog({ open, view, onClose, onApply, onOpenTable }: Pr
           <section style={section}>
             <SectionTitle>时间</SectionTitle>
             <label style={fieldLabel}>
+              时间模式
+              <select aria-label="时间模式" style={input} value={draft.timeMode} onChange={(e) => set('timeMode', e.target.value)}>
+                <option value="live">实时（跟随当前时间）</option>
+                <option value="fixed">选定时间</option>
+              </select>
+            </label>
+            <label style={fieldLabel}>
               本地时间
-              <input aria-label="时间" type="datetime-local" style={input} value={draft.date} onChange={(e) => set('date', e.target.value)} />
+              <input
+                aria-label="时间"
+                type="datetime-local"
+                style={{ ...input, opacity: draft.timeMode === 'live' ? 0.5 : 1 }}
+                disabled={draft.timeMode === 'live'}
+                value={draft.date}
+                onChange={(e) => set('date', e.target.value)}
+              />
             </label>
           </section>
           <section style={section}>

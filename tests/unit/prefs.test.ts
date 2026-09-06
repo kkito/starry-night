@@ -4,7 +4,7 @@ import { loadViewPrefs, saveViewPrefs } from '../../src/lib/prefs';
 import type { ViewParams } from '../../src/components/SettingsDialog';
 
 // 与 App.tsx 的 DEFAULT_VIEW 保持一致
-const base = (): ViewParams => ({ lat: 31.2304, lon: 121.4737, date: '2026-03-20T20:00', topN: 50, aspect: 'auto', showSolar: true, mirror: false, shape: 'ellipse' });
+const base = (): ViewParams => ({ lat: 31.2304, lon: 121.4737, date: '2026-03-20T20:00', timeMode: 'live', topN: 50, aspect: 'auto', showSolar: true, mirror: false, shape: 'ellipse' });
 
 beforeEach(() => localStorage.clear());
 

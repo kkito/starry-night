@@ -7,7 +7,7 @@ import { CITIES, findCity } from '../../src/lib/cities';
 
 afterEach(cleanup);
 
-const view = { lat: 39.9, lon: 116.4, date: '2026-03-20T20:00', topN: 50, aspect: 'auto' as const, showSolar: true, mirror: false, shape: 'ellipse' as const };
+const view = { lat: 39.9, lon: 116.4, date: '2026-03-20T20:00', timeMode: 'fixed' as const, topN: 50, aspect: 'auto' as const, showSolar: true, mirror: false, shape: 'ellipse' as const };
 
 describe('validateView', () => {
   it('合法返回 null', () => {
@@ -17,6 +17,7 @@ describe('validateView', () => {
     expect(validateView({ ...view, lat: 99 })).toContain('lat');
     expect(validateView({ ...view, lon: -200 })).toContain('lon');
     expect(validateView({ ...view, date: '' })).toContain('date');
+    expect(validateView({ ...view, timeMode: 'auto' as never })).toContain('timeMode');
     expect(validateView({ ...view, topN: 0 })).toContain('topN');
     expect(validateView({ ...view, aspect: 'diagonal' as never })).toContain('aspect');
   });
@@ -76,6 +77,15 @@ describe('Top N 滑块与显示比例', () => {
     await userEvent.selectOptions(screen.getByLabelText('显示比例'), 'portrait');
     await userEvent.click(screen.getByRole('button', { name: '应用' }));
     expect(onApply).toHaveBeenCalledWith({ ...view, aspect: 'portrait' });
+  });
+
+  it('实时模式提交时携带当前时间', async () => {
+    const onApply = vi.fn();
+    render(<SettingsDialog open onOpenTable={() => {}} view={{ ...view, timeMode: 'live' }} onClose={() => {}} onApply={onApply} />);
+    await userEvent.click(screen.getByRole('button', { name: '应用' }));
+    const arg = onApply.mock.calls[0]![0];
+    expect(arg.timeMode).toBe('live');
+    expect(Math.abs(Date.now() - new Date(arg.date).getTime())).toBeLessThan(60_000);
   });
 
   it('重新打开时草稿重置为当前 view', async () => {

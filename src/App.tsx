@@ -1,4 +1,4 @@
-import { useMemo, useState, type CSSProperties } from 'react';
+import { useMemo, useState, useEffect, type CSSProperties } from 'react';
 import { computeSky, computeSolarBodies, loadCatalog } from './core';
 import { buildDrawList, buildSolarDrawList } from './lib/drawlist';
 import { zhName } from './lib/names';
@@ -10,7 +10,7 @@ import { COLORS, FONTS } from './lib/tokens';
 
 const ASPECT_RATIO = { landscape: 16 / 9, portrait: 9 / 16 } as const;
 
-const DEFAULT_VIEW: ViewParams = { lat: 31.2304, lon: 121.4737, date: toLocalInput(new Date()), topN: 50, aspect: 'auto', showSolar: true, mirror: false, shape: 'ellipse' };
+const DEFAULT_VIEW: ViewParams = { lat: 31.2304, lon: 121.4737, date: toLocalInput(new Date()), timeMode: 'live', topN: 50, aspect: 'auto', showSolar: true, mirror: false, shape: 'ellipse' };
 
 /** 按比例偏好计算画布尺寸：auto 跟随窗口，横/竖屏固定 16:9 / 9:16 并在视口内居中。 */
 function canvasSize(vp: { width: number; height: number }, aspect: ViewParams['aspect']): { width: number; height: number } {
@@ -22,6 +22,15 @@ function canvasSize(vp: { width: number; height: number }, aspect: ViewParams['a
 
 export default function App() {
   const [view, setView] = useState<ViewParams>(() => loadViewPrefs(DEFAULT_VIEW));
+  // 实时模式的心跳：每 5 分钟更新一次，驱动星图与状态栏刷新
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (view.timeMode !== 'live') return;
+    setNow(Date.now());
+    const id = setInterval(() => setNow(Date.now()), 5 * 60 * 1000);
+    return () => clearInterval(id);
+  }, [view.timeMode]);
+  const activeDate = view.timeMode === 'live' ? toLocalInput(new Date(now)) : view.date;
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [tableOpen, setTableOpen] = useState(false);
   const [summaryOpen, setSummaryOpen] = useState(true);
@@ -29,8 +38,8 @@ export default function App() {
   const { width: cw, height: ch } = canvasSize(vp, view.aspect);
 
   const sky = useMemo(() => {
-    try {
-      const date = new Date(view.date); // datetime-local 即本地时间
+      try {
+        const date = new Date(activeDate); // datetime-local 即本地时间
       const { lstDeg, stars } = computeSky({ lat: view.lat, lon: view.lon, date });
       const bvs = new Map(loadCatalog().map((s) => [s.id, s.bv]));
       // 中文译名优先，保留西文名供 tooltip/星表检索
@@ -58,7 +67,7 @@ export default function App() {
     } catch (err) {
       return { error: err instanceof Error ? err.message : String(err), lstDeg: NaN, stars: [], drawStars: [], solar: [] };
     }
-  }, [view, vp, cw, ch]);
+  }, [view, vp, cw, ch, activeDate]);
 
   return (
     <main style={{ position: 'relative', width: '100vw', height: '100dvh', overflow: 'hidden', color: COLORS.ink, fontFamily: FONTS.ui }}>
@@ -97,7 +106,7 @@ export default function App() {
               <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
                 <SummaryCell>
                   <Readout label="坐标" value={`${formatNum(view.lat)}° ${formatNum(view.lon)}°`} />
-                  <Readout label="时间" value={view.date} />
+                  <Readout label="时间" value={view.timeMode === 'live' ? `${activeDate}（实时）` : view.date} />
                 </SummaryCell>
                 <SummaryCell>
                   <Readout label="恒星时" value={`LAST ${sky.lstDeg.toFixed(1)}°`} />
