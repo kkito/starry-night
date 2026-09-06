@@ -1,7 +1,18 @@
-import type { SkyStar } from '../core/sky';
 import { COLORS, FONTS } from '../lib/tokens';
 
-export function StarTooltip({ star, x, y }: { star: SkyStar; x: number; y: number }) {
+/** Tooltip 信息：恒星或太阳系天体共有的展示字段。 */
+export interface TooltipStar {
+  id: string;
+  name?: string;
+  nameEn?: string;
+  mag: number;
+  alt: number;
+  az: number;
+  /** 仅太阳系天体：地心距离（AU） */
+  distAu?: number;
+}
+
+export function StarTooltip({ star, x, y }: { star: TooltipStar; x: number; y: number }) {
   const num: React.CSSProperties = { fontFamily: FONTS.mono, fontVariantNumeric: 'tabular-nums' };
   return (
     <div
@@ -19,6 +30,9 @@ export function StarTooltip({ star, x, y }: { star: SkyStar; x: number; y: numbe
         <span style={{ color: COLORS.inkDim }}>alt </span><span style={num}>{star.alt.toFixed(1)}°</span>
         <span style={{ color: COLORS.inkDim }}> / az </span><span style={num}>{star.az.toFixed(1)}°</span>
       </div>
+      {star.distAu !== undefined && (
+        <div><span style={{ color: COLORS.inkDim }}>dist </span><span style={num}>{star.distAu.toFixed(2)} AU</span></div>
+      )}
     </div>
   );
 }

@@ -1,8 +1,9 @@
 import { useState, type CSSProperties } from 'react';
 import type { SkyStar } from '../core/sky';
+import type { SolarBody } from '../core/ephemeris';
 import { COLORS, FONTS, buttonStyle } from '../lib/tokens';
 
-export function StarTableDialog({ open, stars, onClose }: { open: boolean; stars: SkyStar[]; onClose: () => void }) {
+export function StarTableDialog({ open, stars, solar, onClose }: { open: boolean; stars: SkyStar[]; solar?: SolarBody[]; onClose: () => void }) {
   const [q, setQ] = useState('');
   if (!open) return null;
   const shown = stars
@@ -21,8 +22,27 @@ export function StarTableDialog({ open, stars, onClose }: { open: boolean; stars
             <tr>
               <th style={th}>名称</th><th style={th}>星等</th><th style={th}>高度°</th><th style={th}>方位°</th>
             </tr>
+            {solar && solar.length > 0 && (
+              <tr><th colSpan={4} style={th} data-testid="solar-group">—— 太阳系 ——</th></tr>
+            )}
           </thead>
           <tbody>
+            {(solar ?? []).map((b) => (
+              <tr key={b.id}>
+                <td style={td}>
+                  {b.name}
+                  <span style={{ color: COLORS.inkDim, fontSize: 11 }}> {b.nameEn}</span>
+                </td>
+                <td style={{ ...tdNum, color: COLORS.accent }} data-testid="mag-cell">{b.mag.toFixed(2)}</td>
+                <td style={{ ...tdNum, color: b.alt > 0 ? COLORS.ink : COLORS.inkDim }}>
+                  {b.alt.toFixed(1)}{b.alt <= 0 ? '（地平线下）' : ''}
+                </td>
+                <td style={tdNum}>{b.az.toFixed(1)}</td>
+              </tr>
+            ))}
+            {solar && solar.length > 0 && (
+              <tr><td colSpan={4} style={{ ...th, paddingTop: 8 }}>—— 恒星 ——</td></tr>
+            )}
             {shown.map((s) => (
               <tr key={s.id}>
                 <td style={td}>

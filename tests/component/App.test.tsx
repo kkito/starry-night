@@ -18,10 +18,9 @@ describe('App', () => {
     expect(screen.getByTestId('summary').textContent).toMatch(/可见星/);
   });
 
-  it('菜单打开设置弹框，应用后摘要更新', () => {
+  it('菜单按钮直接打开设置弹框，应用后摘要更新', () => {
     render(<App />);
     fireEvent.click(screen.getByRole('button', { name: '菜单' }));
-    fireEvent.click(screen.getByRole('menu').querySelector('button')!);
     const lat = screen.getByLabelText('纬度');
     fireEvent.change(lat, { target: { value: '-33.87' } });
     fireEvent.click(screen.getByRole('button', { name: '应用' }));
@@ -44,7 +43,6 @@ describe('App', () => {
   it('Top N 限制可见星数量', () => {
     render(<App />);
     fireEvent.click(screen.getByRole('button', { name: '菜单' }));
-    fireEvent.click(screen.getByRole('menu').querySelector('button')!);
     const slider = screen.getByLabelText('Top N 亮星');
     fireEvent.change(slider, { target: { value: '12' } });
     fireEvent.click(screen.getByRole('button', { name: '应用' }));
@@ -54,18 +52,26 @@ describe('App', () => {
   it('显示比例横屏后画布为 16:9 并居中', () => {
     render(<App />);
     fireEvent.click(screen.getByRole('button', { name: '菜单' }));
-    fireEvent.click(screen.getByRole('menu').querySelector('button')!);
     fireEvent.change(screen.getByLabelText('显示比例'), { target: { value: 'landscape' } });
     fireEvent.click(screen.getByRole('button', { name: '应用' }));
     const canvas = screen.getByTestId('star-canvas') as HTMLCanvasElement;
     expect(canvas.width / canvas.height).toBeCloseTo(16 / 9, 6);
   });
 
-  it('菜单打开星表弹框', () => {
+  it('设置弹框内查看星表', () => {
     render(<App />);
     fireEvent.click(screen.getByRole('button', { name: '菜单' }));
-    const menu = screen.getByRole('menu');
-    fireEvent.click(menu.querySelectorAll('button')[1]!);
+    fireEvent.click(screen.getByRole('button', { name: '查看星表' }));
     expect(screen.getByRole('dialog', { name: '星表' })).toBeTruthy();
+    expect(screen.queryByRole('dialog', { name: '设置' })).toBeNull();
+  });
+
+  it('底部状态栏可收起/展开', () => {
+    render(<App />);
+    expect(screen.getByTestId('summary')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: '收起状态栏' }));
+    expect(screen.queryByTestId('summary')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: '展开状态栏' }));
+    expect(screen.getByTestId('summary')).toBeTruthy();
   });
 });

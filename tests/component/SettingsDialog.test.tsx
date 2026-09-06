@@ -7,7 +7,7 @@ import { CITIES, findCity } from '../../src/lib/cities';
 
 afterEach(cleanup);
 
-const view = { lat: 39.9, lon: 116.4, date: '2026-03-20T20:00', topN: 50, aspect: 'auto' as const };
+const view = { lat: 39.9, lon: 116.4, date: '2026-03-20T20:00', topN: 50, aspect: 'auto' as const, showSolar: true, mirror: false, shape: 'ellipse' as const };
 
 describe('validateView', () => {
   it('合法返回 null', () => {
@@ -24,13 +24,14 @@ describe('validateView', () => {
 
 describe('SettingsDialog 基础行为', () => {
   it('open=false 不渲染', () => {
-    render(<SettingsDialog open={false} view={view} onClose={() => {}} onApply={() => {}} />);
+    render(<SettingsDialog open={false}
+      onOpenTable={() => {}} view={view} onClose={() => {}} onApply={() => {}} />);
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('非法值提交显示错误且不回调', async () => {
     const onApply = vi.fn();
-    render(<SettingsDialog open view={view} onClose={() => {}} onApply={onApply} />);
+    render(<SettingsDialog open onOpenTable={() => {}} view={view} onClose={() => {}} onApply={onApply} />);
     await userEvent.clear(screen.getByLabelText('纬度'));
     await userEvent.type(screen.getByLabelText('纬度'), '99');
     await userEvent.click(screen.getByRole('button', { name: '应用' }));
@@ -40,7 +41,7 @@ describe('SettingsDialog 基础行为', () => {
 
   it('合法值提交回调 onApply', async () => {
     const onApply = vi.fn();
-    render(<SettingsDialog open view={view} onClose={() => {}} onApply={onApply} />);
+    render(<SettingsDialog open onOpenTable={() => {}} view={view} onClose={() => {}} onApply={onApply} />);
     await userEvent.clear(screen.getByLabelText('纬度'));
     await userEvent.type(screen.getByLabelText('纬度'), '31.2');
     await userEvent.click(screen.getByRole('button', { name: '应用' }));
@@ -51,7 +52,7 @@ describe('SettingsDialog 基础行为', () => {
 describe('Top N 滑块与显示比例', () => {
   it('拖动滑块后应用携带 topN', async () => {
     const onApply = vi.fn();
-    render(<SettingsDialog open view={view} onClose={() => {}} onApply={onApply} />);
+    render(<SettingsDialog open onOpenTable={() => {}} view={view} onClose={() => {}} onApply={onApply} />);
     const slider = screen.getByLabelText('Top N 亮星');
     fireEvent.change(slider, { target: { value: '88' } });
     expect(screen.getByTestId('top-n-value').textContent).toBe('88');
@@ -59,9 +60,19 @@ describe('Top N 滑块与显示比例', () => {
     expect(onApply).toHaveBeenCalledWith({ ...view, topN: 88 });
   });
 
+  it('切换太阳系天体开关后应用携带 showSolar', async () => {
+    const onApply = vi.fn();
+    render(<SettingsDialog open onOpenTable={() => {}} view={view} onClose={() => {}} onApply={onApply} />);
+    const cb = screen.getByLabelText('显示太阳系天体') as HTMLInputElement;
+    expect(cb.checked).toBe(true);
+    await userEvent.click(cb);
+    await userEvent.click(screen.getByRole('button', { name: '应用' }));
+    expect(onApply).toHaveBeenCalledWith({ ...view, showSolar: false });
+  });
+
   it('选择显示比例后应用携带 aspect', async () => {
     const onApply = vi.fn();
-    render(<SettingsDialog open view={view} onClose={() => {}} onApply={onApply} />);
+    render(<SettingsDialog open onOpenTable={() => {}} view={view} onClose={() => {}} onApply={onApply} />);
     await userEvent.selectOptions(screen.getByLabelText('显示比例'), 'portrait');
     await userEvent.click(screen.getByRole('button', { name: '应用' }));
     expect(onApply).toHaveBeenCalledWith({ ...view, aspect: 'portrait' });
@@ -69,13 +80,15 @@ describe('Top N 滑块与显示比例', () => {
 
   it('重新打开时草稿重置为当前 view', async () => {
     const { rerender } = render(
-      <SettingsDialog open={false} view={view} onClose={() => {}} onApply={() => {}} />,
+      <SettingsDialog open={false}
+      onOpenTable={() => {}} view={view} onClose={() => {}} onApply={() => {}} />,
     );
-    rerender(<SettingsDialog open view={view} onClose={() => {}} onApply={() => {}} />);
+    rerender(<SettingsDialog open onOpenTable={() => {}} view={view} onClose={() => {}} onApply={() => {}} />);
     fireEvent.change(screen.getByLabelText('Top N 亮星'), { target: { value: '30' } });
     expect(screen.getByTestId('top-n-value').textContent).toBe('30');
-    rerender(<SettingsDialog open={false} view={view} onClose={() => {}} onApply={() => {}} />);
-    rerender(<SettingsDialog open view={view} onClose={() => {}} onApply={() => {}} />);
+    rerender(<SettingsDialog open={false}
+      onOpenTable={() => {}} view={view} onClose={() => {}} onApply={() => {}} />);
+    rerender(<SettingsDialog open onOpenTable={() => {}} view={view} onClose={() => {}} onApply={() => {}} />);
     expect((screen.getByLabelText('Top N 亮星') as HTMLInputElement).value).toBe('50');
   });
 });
@@ -116,7 +129,7 @@ beforeEach(() => {
 describe('城市选择', () => {
   it('选择城市回填经纬度', async () => {
     const onApply = vi.fn();
-    render(<SettingsDialog open view={view} onClose={() => {}} onApply={onApply} />);
+    render(<SettingsDialog open onOpenTable={() => {}} view={view} onClose={() => {}} onApply={onApply} />);
     await userEvent.selectOptions(screen.getByLabelText('城市'), '成都');
     expect(screen.getByLabelText('纬度')).toHaveProperty('value', '30.5728');
     expect(screen.getByLabelText('经度')).toHaveProperty('value', '104.0668');
@@ -124,14 +137,14 @@ describe('城市选择', () => {
 
   it('城市回填后可应用', async () => {
     const onApply = vi.fn();
-    render(<SettingsDialog open view={view} onClose={() => {}} onApply={onApply} />);
+    render(<SettingsDialog open onOpenTable={() => {}} view={view} onClose={() => {}} onApply={onApply} />);
     await userEvent.selectOptions(screen.getByLabelText('城市'), '伦敦');
     await userEvent.click(screen.getByRole('button', { name: '应用' }));
     expect(onApply).toHaveBeenCalledWith({ ...view, lat: 51.5072, lon: -0.1276 });
   });
 
   it('手动修改纬度时城市复位为手动输入', async () => {
-    render(<SettingsDialog open view={view} onClose={() => {}} onApply={() => {}} />);
+    render(<SettingsDialog open onOpenTable={() => {}} view={view} onClose={() => {}} onApply={() => {}} />);
     await userEvent.selectOptions(screen.getByLabelText('城市'), '成都');
     await userEvent.type(screen.getByLabelText('纬度'), '1');
     const select = screen.getByLabelText('城市') as HTMLSelectElement;
@@ -142,7 +155,7 @@ describe('城市选择', () => {
 describe('浏览器定位', () => {
   it('授权成功回填经纬度并复位城市', async () => {
     stubGeolocation({ success: { latitude: -33.8688, longitude: 151.2093 } });
-    render(<SettingsDialog open view={view} onClose={() => {}} onApply={() => {}} />);
+    render(<SettingsDialog open onOpenTable={() => {}} view={view} onClose={() => {}} onApply={() => {}} />);
     await userEvent.selectOptions(screen.getByLabelText('城市'), '北京');
     await userEvent.click(screen.getByRole('button', { name: '使用当前位置' }));
     await waitFor(() => {
@@ -154,7 +167,7 @@ describe('浏览器定位', () => {
 
   it('拒绝授权显示错误提示', async () => {
     stubGeolocation({ error: { code: 1, message: 'denied' } });
-    render(<SettingsDialog open view={view} onClose={() => {}} onApply={() => {}} />);
+    render(<SettingsDialog open onOpenTable={() => {}} view={view} onClose={() => {}} onApply={() => {}} />);
     await userEvent.click(screen.getByRole('button', { name: '使用当前位置' }));
     await waitFor(() => {
       expect(screen.getByRole('alert').textContent).toContain('定位被拒绝');
@@ -162,7 +175,7 @@ describe('浏览器定位', () => {
   });
 
   it('不支持 geolocation 时显示错误', async () => {
-    render(<SettingsDialog open view={view} onClose={() => {}} onApply={() => {}} />);
+    render(<SettingsDialog open onOpenTable={() => {}} view={view} onClose={() => {}} onApply={() => {}} />);
     await userEvent.click(screen.getByRole('button', { name: '使用当前位置' }));
     await waitFor(() => {
       expect(screen.getByRole('alert').textContent).toContain('不支持');

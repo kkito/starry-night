@@ -76,3 +76,31 @@ describe('StarChart 悬停', () => {
     expect(screen.queryByTestId('star-tooltip')).toBeNull();
   });
 });
+
+describe('太阳系天体渲染', () => {
+  const solarBody = (over: Record<string, unknown>): StarWithBv =>
+    star({ id: 'mars', name: '火星', az: 0, alt: 45, mag: 1, ...over } as never) as never;
+
+  it('太阳系天体画外圈描边 + 名称', () => {
+    const { calls, ctx } = makeMockCtx();
+    drawSky(ctx, { width: 560, height: 560, stars: [{ ...buildDrawList([solarBody({})], 270, 270)[0]!, solar: true }] });
+    expect(calls.some((c) => c.method === 'stroke')).toBe(true);
+    expect(calls.some((c) => c.method === 'fillText' && c.args[0] === '火星')).toBe(true);
+  });
+
+  it('太阳系天体始终显示名称（不看星等门槛）', () => {
+    const { calls, ctx } = makeMockCtx();
+    const d = { ...buildDrawList([solarBody({ id: 'moon', name: '月亮', mag: -9 })], 270, 270)[0]!, solar: true } as never;
+    drawSky(ctx, { width: 560, height: 560, stars: [d] });
+    expect(calls.some((c) => c.method === 'fillText' && c.args[0] === '月亮')).toBe(true);
+  });
+
+  it('悬停太阳系天体显示含距离与月相的 tooltip', () => {
+    const d = { ...buildDrawList([solarBody({ id: 'moon', name: '月亮', mag: -9, alt: 90 })], 270, 270)[0]!, solar: true, distAu: 0.0024 } as never;
+    render(<StarChart stars={[d]} width={560} height={560} />);
+    const canvas = screen.getByTestId('star-canvas');
+    fireEvent.mouseMove(canvas, { clientX: 280, clientY: 280 });
+    expect(screen.getByText('月亮')).toBeTruthy();
+    expect(screen.getByText(/AU/)).toBeTruthy();
+  });
+});

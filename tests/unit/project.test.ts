@@ -33,6 +33,13 @@ describe('projectAltAz（仰视：N 上、E 左；椭圆撑满视口）', () => 
     expect(projectAltAz(45, 90, 100, 200).x).toBeCloseTo(-50, 9);
   });
 
+  it('镜像（地图式）：东（az=90）在右侧，与未镜像 x 相反', () => {
+    const p = projectAltAz(45, 90, 100, 100, true);
+    expect(p.x).toBeCloseTo(50, 9);
+    expect(p.y).toBeCloseTo(0, 9);
+    expect(projectAltAz(45, 270, 100, 100, true).x).toBeCloseTo(-50, 9);
+  });
+
   it('zenithFraction 线性映射', () => {
     expect(zenithFraction(0)).toBe(1);
     expect(zenithFraction(30)).toBeCloseTo(2 / 3, 9);
