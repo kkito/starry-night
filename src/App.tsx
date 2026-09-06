@@ -9,7 +9,7 @@ import { COLORS, FONTS } from './lib/tokens';
 
 const ASPECT_RATIO = { landscape: 16 / 9, portrait: 9 / 16 } as const;
 
-const DEFAULT_VIEW: ViewParams = { lat: 39.9, lon: 116.4, date: toLocalInput(new Date()), topN: 50, aspect: 'auto', showSolar: true, mirror: false, shape: 'ellipse' };
+const DEFAULT_VIEW: ViewParams = { lat: 31.2304, lon: 121.4737, date: toLocalInput(new Date()), topN: 50, aspect: 'auto', showSolar: true, mirror: false, shape: 'ellipse' };
 
 /** 按比例偏好计算画布尺寸：auto 跟随窗口，横/竖屏固定 16:9 / 9:16 并在视口内居中。 */
 function canvasSize(vp: { width: number; height: number }, aspect: ViewParams['aspect']): { width: number; height: number } {
