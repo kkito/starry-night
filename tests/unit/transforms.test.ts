@@ -20,7 +20,7 @@ describe('transforms', () => {
     const P = precessionMatrix(0.26); // ~J2650
     for (let i = 0; i < 3; i++) {
       for (let j = 0; j < 3; j++) {
-        const dot = P[i]![0] * P[j]![0] + P[i]![1] * P[j]![1] + P[i]![2] * P[j]![2];
+        const dot = P[i]![0]! * P[j]![0]! + P[i]![1]! * P[j]![1]! + P[i]![2]! * P[j]![2]!;
         expect(dot).toBeCloseTo(i === j ? 1 : 0, 10);
       }
     }
