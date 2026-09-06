@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect, type CSSProperties } from 'react';
 import { computeSky, computeSolarBodies, loadCatalog } from './core';
 import { buildDrawList, buildSolarDrawList } from './lib/drawlist';
+import { computeTrackAround } from './lib/track';
 import { zhName } from './lib/names';
 import { StarChart, CANVAS_MARGIN, useViewportSize } from './components/StarChart';
 import { SettingsDialog, toLocalInput, type ViewParams } from './components/SettingsDialog';
@@ -34,8 +35,14 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [tableOpen, setTableOpen] = useState(false);
   const [summaryOpen, setSummaryOpen] = useState(true);
+  // 点击选中的天体：展示其前后 6 小时轨迹
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const vp = useViewportSize();
   const { width: cw, height: ch } = canvasSize(vp, view.aspect);
+  // 圆形时投影半径取内切，保证与 drawSky 的外轮廓一致
+  const half = Math.min(cw, ch) / 2;
+  const effRx = view.shape === 'circle' ? half - CANVAS_MARGIN : cw / 2 - CANVAS_MARGIN;
+  const effRy = view.shape === 'circle' ? half - CANVAS_MARGIN : ch / 2 - CANVAS_MARGIN;
 
   const sky = useMemo(() => {
       try {
@@ -48,9 +55,6 @@ export default function App() {
         return zh ? { ...s, name: zh, nameEn: s.name } : s;
       });
       const visible = named.slice(0, view.topN); // computeSky 已按视星等升序
-      // 圆形时投影半径取内切，保证与 drawSky 的外轮廓一致
-      const effRx = view.shape === 'circle' ? Math.min(cw, ch) / 2 - CANVAS_MARGIN : cw / 2 - CANVAS_MARGIN;
-      const effRy = view.shape === 'circle' ? Math.min(cw, ch) / 2 - CANVAS_MARGIN : ch / 2 - CANVAS_MARGIN;
       const drawStars = buildDrawList(
         visible.map((s) => ({ ...s, bv: bvs.get(s.id) })),
         effRx,
@@ -69,10 +73,30 @@ export default function App() {
     }
   }, [view, vp, cw, ch, activeDate]);
 
+  // 选中天体前后 6 小时的轨迹（过去实线、未来虚线）
+  const track = useMemo(() => {
+    if (!selectedId) return null;
+    try {
+      return computeTrackAround(selectedId, {
+        lat: view.lat, lon: view.lon, date: new Date(activeDate), rx: effRx, ry: effRy, mirror: view.mirror,
+      });
+    } catch {
+      return null;
+    }
+  }, [selectedId, view.lat, view.lon, view.mirror, activeDate, effRx, effRy]);
+
   return (
     <main style={{ position: 'relative', width: '100vw', height: '100dvh', overflow: 'hidden', color: COLORS.ink, fontFamily: FONTS.ui }}>
       <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <StarChart stars={sky.drawStars} width={cw} height={ch} mirror={view.mirror} shape={view.shape} />
+        <StarChart
+          stars={sky.drawStars}
+          width={cw}
+          height={ch}
+          mirror={view.mirror}
+          shape={view.shape}
+          track={track}
+          onSelect={setSelectedId}
+        />
       </div>
       <div style={{ position: 'absolute', top: 10, left: 10 }}>
         <button aria-label="菜单" style={menuButton} onClick={() => setSettingsOpen(true)}>☰</button>
