@@ -5,11 +5,11 @@
 ## 使用
 
 ```bash
-npm install
-npm run preprocess   # data/raw/stars.6.json → data/catalog.json（已入库，可跳过）
-npm test             # 155 项：单测 + 黄金用例
-npm run dev          # 本地页面
-npm run build        # 产物在 dist/，静态托管即可部署
+pnpm install
+pnpm run preprocess   # data/raw/stars.6.json → data/catalog.json（已入库，可跳过）
+pnpm test             # 155 项：单测 + 黄金用例
+pnpm run dev          # 本地页面
+pnpm run build        # 产物在 dist/，静态托管即可部署
 ```
 
 ## 核心 API（src/core）
