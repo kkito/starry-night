@@ -1,0 +1,19 @@
+{
+  "name": "stardemo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "preprocess": "node scripts/preprocess.mjs",
+    "gen-golden": "node scripts/gen-golden.mjs",
+    "test": "vitest run",
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "astronomy-engine": "^2.1.19",
+    "typescript": "^7.0.2",
+    "vite": "^8.2.2",
+    "vitest": "^5.0.0"
+  }
+}
