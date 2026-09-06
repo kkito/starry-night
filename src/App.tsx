@@ -5,6 +5,7 @@ import { zhName } from './lib/names';
 import { StarChart, CANVAS_MARGIN, useViewportSize } from './components/StarChart';
 import { SettingsDialog, toLocalInput, type ViewParams } from './components/SettingsDialog';
 import { StarTableDialog } from './components/StarTableDialog';
+import { loadViewPrefs, saveViewPrefs } from './lib/prefs';
 import { COLORS, FONTS } from './lib/tokens';
 
 const ASPECT_RATIO = { landscape: 16 / 9, portrait: 9 / 16 } as const;
@@ -20,7 +21,7 @@ function canvasSize(vp: { width: number; height: number }, aspect: ViewParams['a
 }
 
 export default function App() {
-  const [view, setView] = useState<ViewParams>(DEFAULT_VIEW);
+  const [view, setView] = useState<ViewParams>(() => loadViewPrefs(DEFAULT_VIEW));
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [tableOpen, setTableOpen] = useState(false);
   const [summaryOpen, setSummaryOpen] = useState(true);
@@ -123,7 +124,7 @@ export default function App() {
         open={settingsOpen}
         view={view}
         onClose={() => setSettingsOpen(false)}
-        onApply={setView}
+        onApply={(v) => { setView(v); saveViewPrefs(v); }}
         onOpenTable={() => { setSettingsOpen(false); setTableOpen(true); }}
       />
       <StarTableDialog open={tableOpen} stars={sky.stars} solar={sky.solar} onClose={() => setTableOpen(false)} />
