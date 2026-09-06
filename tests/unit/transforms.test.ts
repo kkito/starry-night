@@ -12,8 +12,8 @@ describe('transforms', () => {
     expect(back.decDeg).toBeCloseTo(rd.decDeg, 9);
   });
 
-  it('J2000 平均黄赤交角 ε0 = 23.4392911°', () => {
-    expect(meanObliquityDeg(0)).toBeCloseTo(23.4392911, 6);
+  it('J2000 平均黄赤交角 ε0 = 23.4392794°（IAU 2006）', () => {
+    expect(meanObliquityDeg(0)).toBeCloseTo(23.4392794444, 6);
   });
 
   it('岁差矩阵正交归一', () => {
@@ -26,9 +26,10 @@ describe('transforms', () => {
     }
   });
 
-  it('像差矢量幅度 ≈ 20.489″', () => {
+  it('像差矢量：椭圆轨道速度幅度 20.49″±0.35″ 年变化', () => {
     const [x, y, z] = annualAberrationEclVecArcsec(0.25);
-    expect(Math.hypot(x, y, z)).toBeCloseTo(20.489, 3);
+    expect(Math.hypot(x, y, z)).toBeGreaterThan(20.49 - 0.35);
+    expect(Math.hypot(x, y, z)).toBeLessThan(20.49 + 0.35);
     expect(z).toBe(0);
   });
 
