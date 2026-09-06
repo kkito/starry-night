@@ -30,4 +30,14 @@ describe('data/catalog.json', () => {
     const names = new Set(cat.stars.map((s: { name?: string }) => s.name));
     for (const n of ['Sirius', 'Vega', 'Canopus', 'Polaris']) expect(names).toContain(n);
   });
+
+  it('亮星带 bv 色指数且取值合理', () => {
+    const withBv = cat.stars.filter((s: { bv?: number }) => typeof s.bv === 'number');
+    expect(withBv.length).toBeGreaterThan(1000);
+    const sirius = cat.stars.find((s: { name?: string }) => s.name === 'Sirius');
+    expect(sirius.bv).toBeGreaterThan(-0.5);
+    expect(sirius.bv).toBeLessThan(0.5);
+    const betelgeuse = cat.stars.find((s: { name?: string }) => s.name === 'Betelgeuse');
+    if (betelgeuse) expect(betelgeuse.bv).toBeGreaterThan(1.0); // 红超巨星
+  });
 });

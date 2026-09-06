@@ -23,10 +23,13 @@ raw.features.forEach((f, i) => {
   // 不同星可能共用同一专名（如 Tarazed），用 Hipparcos 编号消歧保证 id 唯一
   if (seenIds.has(id)) id = `${id} ${des ?? `star-${i}`}`;
   seenIds.add(id);
+  // bv 在 stars.6.json 中为字符串（可能为空串），需转为 number；空串/NaN 视为缺失
+  const bv = typeof p.bv === 'string' ? parseFloat(p.bv) : p.bv;
   stars.push({
     id,
     ...(name ? { name } : {}),
     mag: p.mag,
+    ...(typeof bv === 'number' && Number.isFinite(bv) ? { bv } : {}),
     raDeg: ra,
     decDeg: dec,
   });
