@@ -3,6 +3,7 @@ import { ALT_RINGS, AZ_SPOKES, AZ_SPOKE_LABELS, projectAltAz, zenithFraction } f
 import type { DrawStar } from '../lib/drawlist';
 import { StarTooltip } from './StarTooltip';
 import type { SkyStar } from '../core/sky';
+import { COLORS, FONTS } from '../lib/tokens';
 
 export type SketchCtx = Pick<
   CanvasRenderingContext2D,
@@ -40,34 +41,35 @@ export function drawSky(ctx: SketchCtx, opts: { width: number; height: number; s
   const ry = cy - CANVAS_MARGIN;
   ctx.save();
   // 地面
-  ctx.fillStyle = '#232a3a';
+  ctx.fillStyle = COLORS.ground;
   ctx.fillRect(0, 0, width, height);
   // 天空（椭圆）
   ctx.beginPath();
   ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
-  ctx.fillStyle = '#0b1020';
+  ctx.fillStyle = COLORS.sky;
   ctx.fill();
   // 高度环 + 刻度
-  ctx.font = '11px sans-serif';
+  ctx.font = `11px ${FONTS.mono}`;
   ctx.textAlign = 'center';
   for (const alt of ALT_RINGS) {
     const k = zenithFraction(alt);
     ctx.beginPath();
     ctx.ellipse(cx, cy, rx * k, ry * k, 0, 0, Math.PI * 2);
-    ctx.strokeStyle = '#2a3350';
+    ctx.strokeStyle = COLORS.line;
     ctx.stroke();
-    ctx.fillStyle = '#5a6a94';
+    ctx.fillStyle = COLORS.inkDim;
     ctx.fillText(`${alt}°`, cx, cy - ry * k - 4);
   }
   // 方位放射线 + 标注
   for (const az of AZ_SPOKES) {
-    const p = projectAltAz(0, az, rx, ry);
     ctx.beginPath();
     ctx.moveTo(cx, cy);
+    const p = projectAltAz(0, az, rx, ry);
     ctx.lineTo(cx + p.x, cy + p.y);
+    ctx.strokeStyle = COLORS.line;
     ctx.stroke();
     const lp = projectAltAz(-5, az, rx, ry); // 地平线外一点
-    ctx.fillStyle = '#8b97b8';
+    ctx.fillStyle = az === 0 ? COLORS.accent : COLORS.inkDim; // 北为定向参考
     ctx.fillText(AZ_SPOKE_LABELS[az]!, cx + lp.x, cy + lp.y + 4);
   }
   // 天顶十字
@@ -76,7 +78,7 @@ export function drawSky(ctx: SketchCtx, opts: { width: number; height: number; s
   ctx.lineTo(cx + 4, cy);
   ctx.moveTo(cx, cy - 4);
   ctx.lineTo(cx, cy + 4);
-  ctx.strokeStyle = '#5a6a94';
+  ctx.strokeStyle = COLORS.inkDim;
   ctx.stroke();
   // 星星
   for (const s of stars) {
@@ -85,7 +87,7 @@ export function drawSky(ctx: SketchCtx, opts: { width: number; height: number; s
     ctx.fillStyle = s.color;
     ctx.fill();
     if (s.label && s.name) {
-      ctx.fillStyle = '#e8ecf8';
+      ctx.fillStyle = COLORS.ink;
       ctx.textAlign = 'left';
       ctx.fillText(s.name, cx + s.x + s.rPx + 3, cy + s.y + 3);
       ctx.textAlign = 'center';

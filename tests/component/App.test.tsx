@@ -28,6 +28,39 @@ describe('App', () => {
     expect(screen.getByTestId('summary').textContent).toContain('-33.87');
   });
 
+  it('默认时间为本地当前时间（无 Z 后缀）', () => {
+    render(<App />);
+    const text = screen.getByTestId('summary').textContent!;
+    const m = text.match(/时间(\d{4}-\d{2}-\d{2}T\d{2}:\d{2})/)!;
+    expect(m).toBeTruthy();
+    const shown = m[1]!;
+    const now = new Date();
+    const p = (n: number) => String(n).padStart(2, '0');
+    const today = `${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())}`;
+    expect(shown).toMatch(new RegExp(`^${today}T`));
+    expect(screen.getByTestId('summary').textContent).not.toContain('Z');
+  });
+
+  it('Top N 限制可见星数量', () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: '菜单' }));
+    fireEvent.click(screen.getByRole('menu').querySelector('button')!);
+    const slider = screen.getByLabelText('Top N 亮星');
+    fireEvent.change(slider, { target: { value: '12' } });
+    fireEvent.click(screen.getByRole('button', { name: '应用' }));
+    expect(screen.getByTestId('summary').textContent).toContain('Top 12 颗');
+  });
+
+  it('显示比例横屏后画布为 16:9 并居中', () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: '菜单' }));
+    fireEvent.click(screen.getByRole('menu').querySelector('button')!);
+    fireEvent.change(screen.getByLabelText('显示比例'), { target: { value: 'landscape' } });
+    fireEvent.click(screen.getByRole('button', { name: '应用' }));
+    const canvas = screen.getByTestId('star-canvas') as HTMLCanvasElement;
+    expect(canvas.width / canvas.height).toBeCloseTo(16 / 9, 6);
+  });
+
   it('菜单打开星表弹框', () => {
     render(<App />);
     fireEvent.click(screen.getByRole('button', { name: '菜单' }));

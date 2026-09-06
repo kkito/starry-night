@@ -5,7 +5,7 @@ export interface Point {
 
 export const ALT_RINGS = [0, 30, 60];
 export const AZ_SPOKES = [0, 90, 180, 270];
-export const AZ_SPOKE_LABELS: Record<number, string> = { 0: 'N', 90: 'E', 180: 'S', 270: 'W' };
+export const AZ_SPOKE_LABELS: Record<number, string> = { 0: '北', 90: '东', 180: '南', 270: '西' };
 
 /** 等距方位投影：天顶距线性映射到 0..1 径向比例。 */
 export function zenithFraction(altDeg: number): number {

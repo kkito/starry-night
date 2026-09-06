@@ -43,6 +43,9 @@ describe('projectAltAz（仰视：N 上、E 左；椭圆撑满视口）', () => 
   it('常量表', () => {
     expect(ALT_RINGS).toEqual([0, 30, 60]);
     expect(AZ_SPOKES).toEqual([0, 90, 180, 270]);
-    expect(AZ_SPOKE_LABELS[90]).toBe('E');
+    expect(AZ_SPOKE_LABELS[0]).toBe('北');
+    expect(AZ_SPOKE_LABELS[90]).toBe('东');
+    expect(AZ_SPOKE_LABELS[180]).toBe('南');
+    expect(AZ_SPOKE_LABELS[270]).toBe('西');
   });
 });

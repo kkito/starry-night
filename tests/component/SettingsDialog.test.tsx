@@ -1,13 +1,13 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
-import { render, screen, cleanup, waitFor } from '@testing-library/react';
+import { render, screen, cleanup, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SettingsDialog, validateView } from '../../src/components/SettingsDialog';
 import { CITIES, findCity } from '../../src/lib/cities';
 
 afterEach(cleanup);
 
-const view = { lat: 39.9, lon: 116.4, date: '2026-03-20T20:00', magLimit: 5 };
+const view = { lat: 39.9, lon: 116.4, date: '2026-03-20T20:00', topN: 50, aspect: 'auto' as const };
 
 describe('validateView', () => {
   it('合法返回 null', () => {
@@ -17,7 +17,8 @@ describe('validateView', () => {
     expect(validateView({ ...view, lat: 99 })).toContain('lat');
     expect(validateView({ ...view, lon: -200 })).toContain('lon');
     expect(validateView({ ...view, date: '' })).toContain('date');
-    expect(validateView({ ...view, magLimit: 6 })).toContain('magLimit');
+    expect(validateView({ ...view, topN: 0 })).toContain('topN');
+    expect(validateView({ ...view, aspect: 'diagonal' as never })).toContain('aspect');
   });
 });
 
@@ -44,6 +45,38 @@ describe('SettingsDialog 基础行为', () => {
     await userEvent.type(screen.getByLabelText('纬度'), '31.2');
     await userEvent.click(screen.getByRole('button', { name: '应用' }));
     expect(onApply).toHaveBeenCalledWith({ ...view, lat: 31.2 });
+  });
+});
+
+describe('Top N 滑块与显示比例', () => {
+  it('拖动滑块后应用携带 topN', async () => {
+    const onApply = vi.fn();
+    render(<SettingsDialog open view={view} onClose={() => {}} onApply={onApply} />);
+    const slider = screen.getByLabelText('Top N 亮星');
+    fireEvent.change(slider, { target: { value: '88' } });
+    expect(screen.getByTestId('top-n-value').textContent).toBe('88');
+    await userEvent.click(screen.getByRole('button', { name: '应用' }));
+    expect(onApply).toHaveBeenCalledWith({ ...view, topN: 88 });
+  });
+
+  it('选择显示比例后应用携带 aspect', async () => {
+    const onApply = vi.fn();
+    render(<SettingsDialog open view={view} onClose={() => {}} onApply={onApply} />);
+    await userEvent.selectOptions(screen.getByLabelText('显示比例'), 'portrait');
+    await userEvent.click(screen.getByRole('button', { name: '应用' }));
+    expect(onApply).toHaveBeenCalledWith({ ...view, aspect: 'portrait' });
+  });
+
+  it('重新打开时草稿重置为当前 view', async () => {
+    const { rerender } = render(
+      <SettingsDialog open={false} view={view} onClose={() => {}} onApply={() => {}} />,
+    );
+    rerender(<SettingsDialog open view={view} onClose={() => {}} onApply={() => {}} />);
+    fireEvent.change(screen.getByLabelText('Top N 亮星'), { target: { value: '30' } });
+    expect(screen.getByTestId('top-n-value').textContent).toBe('30');
+    rerender(<SettingsDialog open={false} view={view} onClose={() => {}} onApply={() => {}} />);
+    rerender(<SettingsDialog open view={view} onClose={() => {}} onApply={() => {}} />);
+    expect((screen.getByLabelText('Top N 亮星') as HTMLInputElement).value).toBe('50');
   });
 });
 

@@ -10,6 +10,8 @@ export interface SkyStar {
   az: number;   // 方位角，从北顺时针（度）
   alt: number;  // 高度角（度）
   mag: number;
+  /** 有中文译名时保留的西文名 */
+  nameEn?: string;
 }
 
 export interface SkyOptions {

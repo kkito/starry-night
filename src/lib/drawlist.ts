@@ -6,6 +6,7 @@ export type StarWithBv = SkyStar & { bv?: number };
 export interface DrawStar {
   id: string;
   name?: string;
+  nameEn?: string;
   x: number;
   y: number;
   rPx: number;
@@ -40,6 +41,7 @@ export function buildDrawList(stars: StarWithBv[], rx: number, ry: number): Draw
     return {
       id: s.id,
       ...(s.name !== undefined ? { name: s.name } : {}),
+      ...(s.nameEn !== undefined ? { nameEn: s.nameEn } : {}),
       x: snap(p.x),
       y: snap(p.y),
       rPx: magToRadius(s.mag),

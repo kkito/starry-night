@@ -33,7 +33,7 @@ describe('drawSky（椭圆投影）', () => {
 
   it('标注 N/E/S/W 与高度刻度', () => {
     const texts = calls.filter((c) => c.method === 'fillText').map((c) => c.args[0]);
-    for (const t of ['N', 'E', 'S', 'W', '0°', '30°', '60°']) expect(texts).toContain(t);
+    for (const t of ['北', '东', '南', '西', '0°', '30°', '60°']) expect(texts).toContain(t);
   });
 
   it('星点圆心 = projectAltAz 输出 + 中心偏移', () => {
