@@ -4,6 +4,7 @@ import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { drawSky } from '../../src/components/StarChart';
 import { StarChart } from '../../src/components/StarChart';
 import { buildDrawList, type StarWithBv } from '../../src/lib/drawlist';
+import type { StarTrack } from '../../src/lib/track';
 import { makeMockCtx, installCanvasMock, type RecordedCall } from './helpers';
 
 const star = (over: Partial<StarWithBv>): StarWithBv => ({ id: 's', ra: 0, dec: 0, az: 0, alt: 90, mag: 0, ...over });
@@ -56,6 +57,65 @@ describe('drawSky（椭圆投影）', () => {
 });
 
 afterEach(cleanup);
+
+describe('drawSky 轨迹绘制', () => {
+  // 简单合成轨迹：自西向东横穿的 13 个点（每 1 小时 = 2 个采样点），当前时刻在下标 6
+  const makeTrack = (alts: number[]): StarTrack => ({
+    id: 't',
+    pastCount: 6,
+    points: alts.map((alt, i) => ({ x: -120 + i * 20, y: 0, alt })),
+  });
+
+  it('过去段实线、未来段虚线（setLineDash [5,5]）', () => {
+    const { calls, ctx } = makeMockCtx();
+    drawSky(ctx, { width: 560, height: 560, stars: [], track: makeTrack(Array(13).fill(45)) });
+    const dashes = calls.filter((c) => c.method === 'setLineDash').map((c) => c.args[0] as number[]);
+    const dashed = dashes.filter((d) => d.includes(5)); // 虚线样式 [5, 5]
+    expect(dashed).toHaveLength(6); // 未来段逐段虚线（12 段中的后 6 段）
+    expect(dashes.some((d) => d.length === 0)).toBe(true); // 过去段为实线
+  });
+
+  it('地平线以下的段落不画', () => {
+    const { calls, ctx } = makeMockCtx();
+    // 当前时刻之后立即落到地平线下：未来段全部跳过
+    const alts = [45, 40, 30, 20, 10, 5, 3, -1, -5, -10, -15, -20, -25];
+    drawSky(ctx, { width: 560, height: 560, stars: [], track: makeTrack(alts) });
+    const dashes = calls.filter((c) => c.method === 'setLineDash').map((c) => c.args[0] as number[]);
+    expect(dashes.some((d) => d.includes(5))).toBe(false);
+  });
+
+  it('端点箭头与整小时方向箭头都有描边', () => {
+    const { calls, ctx } = makeMockCtx();
+    drawSky(ctx, { width: 560, height: 560, stars: [], track: makeTrack(Array(13).fill(45)) });
+    // 每个箭头由两次 moveTo + stroke 组成；13 点轨迹 → 2 个端点箭头 + 6 个整小时箭头（跳过当前时刻）
+    const strokes = calls.filter((c) => c.method === 'stroke');
+    expect(strokes.length).toBeGreaterThanOrEqual(8);
+  });
+
+  it('不传 track 时不出轨迹相关调用', () => {
+    const { calls, ctx } = makeMockCtx();
+    drawSky(ctx, { width: 560, height: 560, stars: [] });
+    expect(calls.some((c) => c.method === 'setLineDash')).toBe(false);
+  });
+});
+
+describe('StarChart 点击选中', () => {
+  it('点击星点回调其 id', () => {
+    const onSelect = vi.fn();
+    const stars = buildDrawList([star({ id: 'zenith', alt: 90, mag: 0 })], 270, 270);
+    render(<StarChart stars={stars} width={560} height={560} onSelect={onSelect} />);
+    fireEvent.click(screen.getByTestId('star-canvas'), { clientX: 280, clientY: 280 });
+    expect(onSelect).toHaveBeenCalledWith('zenith');
+  });
+
+  it('点击空白处回调 null', () => {
+    const onSelect = vi.fn();
+    const stars = buildDrawList([star({ id: 'zenith', alt: 90, mag: 0 })], 270, 270);
+    render(<StarChart stars={stars} width={560} height={560} onSelect={onSelect} />);
+    fireEvent.click(screen.getByTestId('star-canvas'), { clientX: 5, clientY: 5 }); // 角落，远离天顶
+    expect(onSelect).toHaveBeenCalledWith(null);
+  });
+});
 
 describe('StarChart 悬停', () => {
   it('鼠标移到星点附近显示 tooltip', () => {
