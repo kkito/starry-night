@@ -3,34 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>星空位置计算</title>
+    <title>星空</title>
     <style>
-      body { font-family: system-ui, sans-serif; max-width: 720px; margin: 2rem auto; padding: 0 1rem; }
-      form { display: flex; gap: .5rem; flex-wrap: wrap; align-items: end; }
-      label { display: flex; flex-direction: column; font-size: .8rem; }
-      input { padding: .35rem; }
-      table { border-collapse: collapse; width: 100%; font-size: .85rem; }
-      th, td { border-bottom: 1px solid #ddd; padding: .3rem .5rem; text-align: right; }
-      th:first-child, td:first-child { text-align: left; }
-      #summary { color: #666; }
+      html, body { margin: 0; height: 100%; background: #232a3a; }
+      #root { min-height: 100%; display: flex; flex-direction: column; align-items: center; }
     </style>
   </head>
   <body>
-    <h1>星空位置计算</h1>
-    <form id="f">
-      <label>纬度<input id="lat" value="39.9" required /></label>
-      <label>经度<input id="lon" value="116.4" required /></label>
-      <label>时间(UTC)<input id="date" type="datetime-local" value="2026-03-20T20:00" required /></label>
-      <label>星等上限<input id="mag" value="5.0" step="0.1" /></label>
-      <button type="submit">计算</button>
-    </form>
-    <p id="summary"></p>
-    <table id="tbl" hidden>
-      <thead>
-        <tr><th>名称</th><th>星等</th><th>高度°</th><th>方位°</th><th>RA°</th><th>Dec°</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-    <script type="module" src="/src/main.ts"></script>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
