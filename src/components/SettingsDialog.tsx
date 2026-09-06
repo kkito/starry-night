@@ -1,4 +1,6 @@
 import { useState, type FormEvent, type CSSProperties } from 'react';
+import { CITIES, findCity } from '../lib/cities';
+import { getCurrentPosition } from '../lib/geolocation';
 
 export interface ViewParams {
   lat: number;
@@ -28,11 +30,34 @@ function toDraft(v: ViewParams): Draft {
   return { lat: String(v.lat), lon: String(v.lon), date: v.date, magLimit: String(v.magLimit) };
 }
 
+const fmt = (n: number) => String(Number(n.toFixed(4)));
+
 export function SettingsDialog({ open, view, onClose, onApply }: Props) {
   const [draft, setDraft] = useState<Draft>(() => toDraft(view));
   const [error, setError] = useState<string | null>(null);
+  const [city, setCity] = useState('');
+  const [locating, setLocating] = useState(false);
   if (!open) return null;
   const set = (k: keyof Draft, v: string) => setDraft((d) => ({ ...d, [k]: v }));
+  const pickCity = (name: string) => {
+    setCity(name);
+    setError(null);
+    const c = findCity(name);
+    if (c) setDraft((d) => ({ ...d, lat: fmt(c.lat), lon: fmt(c.lon) }));
+  };
+  const locate = async () => {
+    setLocating(true);
+    setError(null);
+    try {
+      const pos = await getCurrentPosition();
+      setDraft((d) => ({ ...d, lat: fmt(pos.lat), lon: fmt(pos.lon) }));
+      setCity('');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '定位失败');
+    } finally {
+      setLocating(false);
+    }
+  };
   const submit = (e: FormEvent) => {
     e.preventDefault();
     const parsed: ViewParams = {
@@ -50,8 +75,22 @@ export function SettingsDialog({ open, view, onClose, onApply }: Props) {
   return (
     <div role="dialog" aria-label="设置" style={overlay} onClick={onClose}>
       <form style={panel} onClick={(e) => e.stopPropagation()} onSubmit={submit}>
-        <label>纬度<input aria-label="纬度" value={draft.lat} onChange={(e) => set('lat', e.target.value)} /></label>
-        <label>经度<input aria-label="经度" value={draft.lon} onChange={(e) => set('lon', e.target.value)} /></label>
+        <div style={row}>
+          <label style={{ flex: 1 }}>
+            城市
+            <select aria-label="城市" value={city} onChange={(e) => pickCity(e.target.value)}>
+              <option value="">手动输入</option>
+              {CITIES.map((c) => (
+                <option key={c.name} value={c.name}>{c.name}</option>
+              ))}
+            </select>
+          </label>
+          <button type="button" aria-label="使用当前位置" onClick={locate} disabled={locating}>
+            {locating ? '定位中…' : '使用当前位置'}
+          </button>
+        </div>
+        <label>纬度<input aria-label="纬度" value={draft.lat} onChange={(e) => { set('lat', e.target.value); setCity(''); }} /></label>
+        <label>经度<input aria-label="经度" value={draft.lon} onChange={(e) => { set('lon', e.target.value); setCity(''); }} /></label>
         <label>时间(UTC)<input aria-label="时间" type="datetime-local" value={draft.date} onChange={(e) => set('date', e.target.value)} /></label>
         <label>星等上限<input aria-label="星等上限" value={draft.magLimit} onChange={(e) => set('magLimit', e.target.value)} /></label>
         {error && <p role="alert" style={{ color: '#ff7b7b' }}>{error}</p>}
@@ -64,3 +103,4 @@ export function SettingsDialog({ open, view, onClose, onApply }: Props) {
 
 const overlay: CSSProperties = { position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' };
 const panel: CSSProperties = { display: 'flex', flexDirection: 'column', gap: 8, background: '#1a2136', padding: 16, borderRadius: 8, minWidth: 260 };
+const row: CSSProperties = { display: 'flex', gap: 8, alignItems: 'flex-end' };
