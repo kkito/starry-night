@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
-import { altAzToVec, DOME_R, TREE_AZ, BUILDING_AZ } from '../lib/dome';
+import { altAzToVec, DOME_R } from '../lib/dome';
 import type { DrawStar } from '../lib/drawlist';
 import type { StarTrack } from '../lib/track';
 import { StarTooltip } from './StarTooltip';
@@ -37,8 +37,27 @@ function domeMaterial(): THREE.ShaderMaterial {
 
 function silhouette<T extends THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>>(mesh: T): T {
   mesh.material.transparent = true;
-  mesh.material.opacity = 0.55;
+  mesh.material.opacity = 0.45;
+  mesh.material.depthWrite = false;
   return mesh;
+}
+
+/** 地平线方位文字（东/南/西/北）：Canvas 纹理精灵，固定在天球内壁。 */
+function directionLabel(text: string, color = '#e8b45a'): THREE.Sprite {
+  const canvas = document.createElement('canvas');
+  canvas.width = 128;
+  canvas.height = 64;
+  const ctx = canvas.getContext('2d')!;
+  ctx.font = '40px system-ui, "PingFang SC", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = color;
+  ctx.fillText(text, 64, 34);
+  const tex = new THREE.CanvasTexture(canvas);
+  const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, depthTest: false });
+  const sp = new THREE.Sprite(mat);
+  sp.scale.set(36, 18, 1);
+  return sp;
 }
 
 export function SkyDome3D({ stars, track, selectedId, onSelect }: SkyDome3DProps) {
@@ -213,44 +232,59 @@ export function SkyDome3D({ stars, track, selectedId, onSelect }: SkyDome3DProps
     };
     rebuildSceneRef.current(dataRef.current.stars, dataRef.current.track);
 
-    // 剪影：树 @TREE_AZ / 楼 @BUILDING_AZ
+    // 剪影：每 90° 一组树 + 楼（共 4 组，半透明）
+    const SILHOUETTE_GROUPS = [
+      { treeAz: 20, bldAz: 43 },
+      { treeAz: 110, bldAz: 133 },
+      { treeAz: 200, bldAz: 223 },
+      { treeAz: 290, bldAz: 313 },
+    ];
     {
-      const td = altAzToVec(TREE_AZ, 0, DOME_R * 0.55);
-      const tree = new THREE.Group();
-      const trunk = silhouette(new THREE.Mesh(
-        new THREE.CylinderGeometry(1.2, 1.6, 10, 8),
-        new THREE.MeshBasicMaterial({ color: 0x060d0a }),
-      ));
-      trunk.position.y = 5;
-      const top = silhouette(new THREE.Mesh(
-        new THREE.ConeGeometry(9, 22, 10),
-        new THREE.MeshBasicMaterial({ color: 0x060d0a }),
-      ));
-      top.position.y = 20;
-      tree.add(trunk, top);
-      tree.position.set(td.x, 0, td.z);
-      scene.add(tree);
+      const winPts: number[] = [];
+      for (const g of SILHOUETTE_GROUPS) {
+        const td = altAzToVec(g.treeAz, 0, DOME_R * 0.55);
+        const tree = new THREE.Group();
+        const trunk = silhouette(new THREE.Mesh(
+          new THREE.CylinderGeometry(1.2, 1.6, 10, 8),
+          new THREE.MeshBasicMaterial({ color: 0x060d0a }),
+        ));
+        trunk.position.y = 5;
+        const top = silhouette(new THREE.Mesh(
+          new THREE.ConeGeometry(9, 22, 10),
+          new THREE.MeshBasicMaterial({ color: 0x060d0a }),
+        ));
+        top.position.y = 20;
+        tree.add(trunk, top);
+        tree.position.set(td.x, 0, td.z);
+        scene.add(tree);
 
-      const bd = altAzToVec(BUILDING_AZ, 0, DOME_R * 0.55);
-      const b = silhouette(new THREE.Mesh(
-        new THREE.BoxGeometry(22, 38, 10),
-        new THREE.MeshBasicMaterial({ color: 0x0a1024 }),
-      ));
-      b.position.set(bd.x, 19, bd.z);
-      b.lookAt(0, 19, 0);
-      b.updateMatrixWorld();
-      scene.add(b);
-      const wp: number[] = [];
-      for (let r = 0; r < 4; r++) {
-        for (let cIdx = 0; cIdx < 3; cIdx++) {
-          if ((r * 3 + cIdx) % 3 === 0) continue;
+        const bd = altAzToVec(g.bldAz, 0, DOME_R * 0.55);
+        const b = silhouette(new THREE.Mesh(
+          new THREE.BoxGeometry(22, 38, 10),
+          new THREE.MeshBasicMaterial({ color: 0x0a1024 }),
+        ));
+        b.position.set(bd.x, 19, bd.z);
+        b.lookAt(0, 19, 0);
+        b.updateMatrixWorld();
+        scene.add(b);
+        // 亮窗：只亮 4 扇、窗口放大
+        const lit: Array<[number, number]> = [[0, 3], [2, 2], [1, 1], [2, 0]];
+        for (const [cIdx, r] of lit) {
           const off = new THREE.Vector3(-7 + cIdx * 7, 8 + r * 8, 5.2).applyQuaternion(b.quaternion);
-          wp.push(bd.x + off.x, off.y, bd.z + off.z);
+          winPts.push(bd.x + off.x, off.y, bd.z + off.z);
         }
       }
       const winG = new THREE.BufferGeometry();
-      winG.setAttribute('position', new THREE.Float32BufferAttribute(wp, 3));
-      scene.add(new THREE.Points(winG, new THREE.PointsMaterial({ color: 0xffdc78, size: 3, sizeAttenuation: false, transparent: true, opacity: 0.8 })));
+      winG.setAttribute('position', new THREE.Float32BufferAttribute(winPts, 3));
+      scene.add(new THREE.Points(winG, new THREE.PointsMaterial({ color: 0xffdc78, size: 8, sizeAttenuation: false, transparent: true, opacity: 0.9 })));
+    }
+
+    // 地平线方位标注：东/南/西/北（正东 90° 等，标在地平线上方）
+    for (const [az, text] of [[0, '北'], [90, '东'], [180, '南'], [270, '西']] as const) {
+      const v = altAzToVec(az, 4, DOME_R * 0.97);
+      const sp = directionLabel(text, az === 90 ? '#e8b45a' : '#9aa5c4');
+      sp.position.set(v.x, v.y, v.z);
+      scene.add(sp);
     }
 
     // 交互：拖拽改 yaw/pitch，滚轮改 fov；raycast 悬停 + 点击选中
