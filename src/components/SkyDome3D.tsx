@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
-import { altAzToVec, DOME_R } from '../lib/dome';
+import { altAzToVec, DOME_R, pointSizeFor } from '../lib/dome';
 import type { DrawStar } from '../lib/drawlist';
 import type { StarTrack } from '../lib/track';
 import { StarTooltip } from './StarTooltip';
@@ -42,7 +42,20 @@ function silhouette<T extends THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMa
   return mesh;
 }
 
-/** 地平线方位文字（东/南/西/北）：Canvas 纹理精灵，固定在天球内壁。 */
+/** 星点圆形纹理：PointsMaterial 默认是方块，用径向渐变贴图画成圆点。 */
+function circleTexture(): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 64;
+  canvas.height = 64;
+  const ctx = canvas.getContext('2d')!;
+  const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+  g.addColorStop(0, 'rgba(255,255,255,1)');
+  g.addColorStop(0.5, 'rgba(255,255,255,1)');
+  g.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 64, 64);
+  return new THREE.CanvasTexture(canvas);
+}
 function directionLabel(text: string, color = '#e8b45a'): THREE.Sprite {
   const canvas = document.createElement('canvas');
   canvas.width = 128;
@@ -74,15 +87,7 @@ export function SkyDome3D({ stars, track, selectedId, onSelect }: SkyDome3DProps
   const applyCamRef = useRef<(() => void) | null>(null);
   const rebuildSceneRef = useRef<((stars: DrawStar[], track: StarTrack | null) => void) | null>(null);
 
-  // 跟随选中：yaw = az，pitch = max(8°, alt * 0.5)
-  useEffect(() => {
-    if (!selectedId) return;
-    const s = stars.find((x) => x.id === selectedId);
-    if (!s) return;
-    camRef.current.yaw = (s.az * Math.PI) / 180;
-    camRef.current.pitch = Math.max(8, s.alt * 0.5) * (Math.PI / 180);
-    applyCamRef.current?.();
-  }, [selectedId, stars]);
+  // 选中不碰视角：点击只叠加轨迹，相机 yaw/pitch 完全由用户拖拽决定。
 
   // 星星/轨迹 prop 更新时重建动态场景对象（mount-effect 内注册 rebuild 实现）
   useEffect(() => {
@@ -107,6 +112,7 @@ export function SkyDome3D({ stars, track, selectedId, onSelect }: SkyDome3DProps
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(65, w / h, 0.1, 2000);
     camera.position.set(0, 2, 0);
+    const starTex = circleTexture();
 
     const applyCam = () => {
       const { yaw, pitch } = camRef.current;
@@ -168,29 +174,45 @@ export function SkyDome3D({ stars, track, selectedId, onSelect }: SkyDome3DProps
     scene.add(dynamic);
     const starPos: THREE.Vector3[] = [];
     const disposeObj = (o: THREE.Object3D) => {
-      const mesh = o as THREE.Mesh;
-      const g = mesh.geometry as THREE.BufferGeometry | undefined;
-      g?.dispose?.();
-      const m = mesh.material as THREE.Material | THREE.Material[] | undefined;
-      if (Array.isArray(m)) m.forEach((x) => x.dispose?.());
-      else m?.dispose?.();
+      o.traverse((child) => {
+        const mesh = child as THREE.Mesh;
+        const g = mesh.geometry as THREE.BufferGeometry | undefined;
+        g?.dispose?.();
+        const m = mesh.material as THREE.Material | THREE.Material[] | undefined;
+        if (Array.isArray(m)) m.forEach((x) => x.dispose?.());
+        else m?.dispose?.();
+      });
     };
     const buildStars = (starObjs: DrawStar[]) => {
+      // starPos 与 starObjs 同序：拾取索引直接对应
       starPos.length = 0;
       for (const s of starObjs) {
         const v = altAzToVec(s.az, s.alt, DOME_R * 0.98);
         starPos.push(new THREE.Vector3(v.x, v.y, v.z));
       }
-      const g = new THREE.BufferGeometry().setFromPoints(starPos);
-      const cols: number[] = [];
-      const c = new THREE.Color();
-      for (const s of starObjs) {
-        c.set(s.color);
-        cols.push(c.r, c.g, c.b);
+      const group = new THREE.Group();
+      // 按 rPx 分桶：同尺寸的星共用一个 Points（PointsMaterial 尺寸是整批统一的）
+      const buckets = new Map<number, number[]>();
+      for (let i = 0; i < starObjs.length; i++) {
+        const size = pointSizeFor(starObjs[i]!.rPx);
+        let b = buckets.get(size);
+        if (!b) { b = []; buckets.set(size, b); }
+        b.push(i);
       }
-      g.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
-      const m = new THREE.PointsMaterial({ size: 4, sizeAttenuation: false, vertexColors: true, transparent: true, opacity: 0.95, depthWrite: false });
-      return new THREE.Points(g, m);
+      const c = new THREE.Color();
+      for (const [size, idxs] of buckets) {
+        const pts = idxs.map((i) => starPos[i]!);
+        const cols: number[] = [];
+        for (const i of idxs) {
+          c.set(starObjs[i]!.color);
+          cols.push(c.r, c.g, c.b);
+        }
+        const g = new THREE.BufferGeometry().setFromPoints(pts);
+        g.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
+        const m = new THREE.PointsMaterial({ map: starTex, size, sizeAttenuation: false, vertexColors: true, transparent: true, opacity: 0.95, depthWrite: false });
+        group.add(new THREE.Points(g, m));
+      }
+      return group;
     };
     const buildTrack = (t: StarTrack | null): THREE.Object3D[] => {
       if (!t) return [];
@@ -276,7 +298,7 @@ export function SkyDome3D({ stars, track, selectedId, onSelect }: SkyDome3DProps
       }
       const winG = new THREE.BufferGeometry();
       winG.setAttribute('position', new THREE.Float32BufferAttribute(winPts, 3));
-      scene.add(new THREE.Points(winG, new THREE.PointsMaterial({ color: 0xffdc78, size: 8, sizeAttenuation: false, transparent: true, opacity: 0.9 })));
+      scene.add(new THREE.Points(winG, new THREE.PointsMaterial({ map: starTex, color: 0xffdc78, size: 8, sizeAttenuation: false, transparent: true, opacity: 0.9, depthWrite: false })));
     }
 
     // 地平线方位标注：东/南/西/北（正东 90° 等，标在地平线上方）
@@ -359,6 +381,7 @@ export function SkyDome3D({ stars, track, selectedId, onSelect }: SkyDome3DProps
         else m?.dispose?.();
       });
       renderer.dispose();
+      starTex.dispose();
       el.remove();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
