@@ -6,12 +6,14 @@ import type { StarTrack } from '../lib/track';
 import { StarTooltip } from './StarTooltip';
 import { COLORS } from '../lib/tokens';
 
-export interface SkyDome3DProps {
+export interface Sky3DProps {
   stars: DrawStar[];
   track: StarTrack | null;
   selectedId: string | null;
   onSelect?: (id: string | null) => void;
 }
+/** @deprecated 兼容旧名 */
+export type SkyDome3DProps = Sky3DProps;
 
 const ALT_RINGS = [10, 20, 30, 45, 60];
 const RING_COLOR = 0x44507a;
@@ -73,7 +75,7 @@ function directionLabel(text: string, color = '#e8b45a'): THREE.Sprite {
   return sp;
 }
 
-export function SkyDome3D({ stars, track, selectedId, onSelect }: SkyDome3DProps) {
+export function Sky3D({ stars, track, selectedId, onSelect }: Sky3DProps) {
   const mountRef = useRef<HTMLDivElement>(null);
   const camRef = useRef({ yaw: (180 * Math.PI) / 180, pitch: (25 * Math.PI) / 180 });
   const [noGL, setNoGL] = useState(false);
@@ -193,13 +195,15 @@ export function SkyDome3D({ stars, track, selectedId, onSelect }: SkyDome3DProps
     };
     const RING_OPACITY = [0.6, 0.5, 0.5, 0.4, 0.35];
     ALT_RINGS.forEach((alt, i) => ring(alt, RING_OPACITY[i] ?? 0.5));
-    // 纬线（等高圈）仰角度数标注：10°/20°/30°/45°/60°，放在正南附近便于阅读
+    // 纬线（等高圈）仰角度数标注：每圈在四正方位各标一次，任意朝向可见
     for (const alt of ALT_RINGS) {
-      const v = altAzToVec(180, alt, DOME_R * 0.985);
-      const sp = directionLabel(`${alt}°`, '#8ea0c8');
-      sp.position.set(v.x, v.y + 2, v.z);
-      sp.scale.set(18, 9, 1);
-      scene.add(sp);
+      for (const az of [0, 90, 180, 270] as const) {
+        const v = altAzToVec(az, alt, DOME_R * 0.985);
+        const sp = directionLabel(`${alt}°`, '#8ea0c8');
+        sp.position.set(v.x, v.y + 2, v.z);
+        sp.scale.set(18, 9, 1);
+        scene.add(sp);
+      }
     }
     for (let az = 0; az < 360; az += 30) {
       const a = altAzToVec(az, 0, DOME_R * 0.985);
@@ -458,3 +462,5 @@ export function SkyDome3D({ stars, track, selectedId, onSelect }: SkyDome3DProps
     </div>
   );
 }
+/** @deprecated 旧名兼容 */
+export const SkyDome3D = Sky3D;

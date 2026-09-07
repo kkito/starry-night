@@ -4,7 +4,7 @@ import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { makeMockCtx, installCanvasMock } from './helpers';
 import { StarChart } from '../../src/components/StarChart';
 import { buildDrawList, type StarWithBv } from '../../src/lib/drawlist';
-import { SkyDome3D } from '../../src/components/SkyDome3D';
+import { Sky3D } from '../../src/components/Sky3D';
 
 const star = (over: Partial<StarWithBv>): StarWithBv => ({ id: 's', ra: 0, dec: 0, az: 0, alt: 90, mag: 0, ...over });
 beforeAll(() => {
@@ -40,9 +40,9 @@ describe('选中弹窗 2D', () => {
 describe('选中弹窗 3D', () => {
   it('selectedId 显示弹窗，null 时消失', () => {
     const stars = [{ id: 'a', name: 'A', mag: 1, alt: 30, az: 90, rPx: 4, color: '#fff', x: 0, y: 0 } as never];
-    const { rerender } = render(<SkyDome3D stars={stars} track={null} selectedId="a" />);
+    const { rerender } = render(<Sky3D stars={stars} track={null} selectedId="a" />);
     expect(screen.getByTestId('selected-tooltip')).toBeTruthy();
-    rerender(<SkyDome3D stars={stars} track={null} selectedId={null} />);
+    rerender(<Sky3D stars={stars} track={null} selectedId={null} />);
     expect(screen.queryByTestId('selected-tooltip')).toBeNull();
   });
 });

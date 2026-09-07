@@ -4,7 +4,7 @@ import { buildDrawList, buildSolarDrawList } from './lib/drawlist';
 import { computeTrackAround } from './lib/track';
 import { zhName } from './lib/names';
 import { StarChart, CANVAS_MARGIN, useViewportSize } from './components/StarChart';
-import { SkyDome3D } from './components/SkyDome3D';
+import { Sky3D } from './components/Sky3D';
 import { SettingsDialog, toLocalInput, type ViewParams } from './components/SettingsDialog';
 import { ViewModeSwitch } from './components/ViewModeSwitch';
 import { StarTableDialog } from './components/StarTableDialog';
@@ -91,7 +91,7 @@ export default function App() {
     <main style={{ position: 'relative', width: '100vw', height: '100dvh', overflow: 'hidden', color: COLORS.ink, fontFamily: FONTS.ui }}>
       <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         {view.viewMode === '3d' ? (
-          <SkyDome3D stars={sky.drawStars} track={track} selectedId={selectedId} onSelect={setSelectedId} />
+          <Sky3D stars={sky.drawStars} track={track} selectedId={selectedId} onSelect={setSelectedId} />
         ) : (
           <StarChart
             stars={sky.drawStars}

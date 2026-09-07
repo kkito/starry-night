@@ -3,11 +3,11 @@ import { describe, it, expect, afterEach } from 'vitest';
 import { render, cleanup } from '@testing-library/react';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { SkyDome3D } from '../../src/components/SkyDome3D';
+import { Sky3D } from '../../src/components/Sky3D';
 
 afterEach(cleanup);
 
-const SRC = fs.readFileSync(path.resolve(__dirname, '../../src/components/SkyDome3D.tsx'), 'utf-8');
+const SRC = fs.readFileSync(path.resolve(__dirname, '../../src/components/Sky3D.tsx'), 'utf-8');
 
 function mockStars() {
   return [
@@ -16,7 +16,7 @@ function mockStars() {
   ] as never;
 }
 
-describe('SkyDome3D fixes RED', () => {
+describe('Sky3D fixes RED', () => {
   it('1. 窗户保持方形：窗户 PointsMaterial 不应带圆形贴图（当前实现窗户用了 starTex，应失败）', () => {
     // 窗户那一行现在是: new THREE.Points(winG, new THREE.PointsMaterial({ map: starTex, color: 0xffdc78 ...
     // 期望：窗户材质不应有 map，星点才用
@@ -30,7 +30,7 @@ describe('SkyDome3D fixes RED', () => {
     expect(SRC.includes('touchAction') || SRC.includes('touch-action'), '源码应包含 touchAction 处理').toBe(true);
     expect(SRC.includes("touchAction: 'none'") || SRC.includes('touchAction: "none"'), '应显式设为 none').toBe(true);
     // jsdom 无 WebGL 时走 fallback，不渲染 skydome；有 WebGL 时需校验 DOM
-    const { container } = render(<SkyDome3D stars={mockStars()} track={null} selectedId={null} />);
+    const { container } = render(<Sky3D stars={mockStars()} track={null} selectedId={null} />);
     const skydome = container.querySelector('[data-testid="skydome"]') as HTMLElement | null;
     if (skydome) {
       const hasTouchNone = skydome.style.touchAction === 'none' || skydome.getAttribute('style')?.includes('touch-action');
