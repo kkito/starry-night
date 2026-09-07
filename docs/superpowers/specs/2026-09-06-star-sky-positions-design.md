@@ -1,4 +1,4 @@
-# 星空位置计算页（stardemo）设计文档
+# 星空位置计算页（starry-night）设计文档
 
 日期：2026-09-06
 状态：待用户审阅
@@ -27,7 +27,7 @@
 ## 架构
 
 ```
-stardemo/
+starry-night/
 ├─ src/core/                  # 纯 TS 算法核心，零 DOM 依赖，Node 可直接测试
 │  ├─ time.ts                 # Date→JD、T、GMST、LST
 │  ├─ transforms.ts           # 岁差/章动/像差矩阵、赤道→地平、可选大气折射

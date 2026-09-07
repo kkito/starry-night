@@ -396,17 +396,30 @@ export function SkyDome3D({ stars, track, selectedId, onSelect }: SkyDome3DProps
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const selectedStar = selectedId ? (stars.find((x) => x.id === selectedId) ?? null) : null;
   if (noGL) {
     return (
       <div data-testid="skydome-fallback" style={{ position: 'relative', background: COLORS.sky, color: COLORS.inkDim, padding: 24, textAlign: 'center' }}>
         当前环境不支持 WebGL，无法显示 3D 天穹
+        {selectedStar && (
+          <div data-testid="selected-tooltip" style={{ marginTop: 12 }}>
+            <StarTooltip star={selectedStar} x={0} y={0} />
+          </div>
+        )}
       </div>
     );
   }
   return (
     <div data-testid="skydome" style={{ position: 'relative', width: '100%', height: '100%', touchAction: 'none' }} onMouseLeave={() => setHover(null)}>
       <div ref={mountRef} style={{ width: '100%', height: '100%', touchAction: 'none' }} />
-      {hover && <StarTooltip star={hover.star} x={hover.px} y={hover.py} />}
+      {hover && !selectedStar && <StarTooltip star={hover.star} x={hover.px} y={hover.py} />}
+      {selectedStar && (
+        <div data-testid="selected-tooltip" style={{ position: 'absolute', left: 12, top: 12 }}>
+          <div style={{ position: 'relative', left: 0, top: 0 }}>
+            <StarTooltip star={selectedStar} x={0} y={0} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-# stardemo — 星空位置计算
+# starry-night — 星空位置计算
 
 给定经纬度与时刻，计算可见星星的位置并按视星等排序。算法核心为纯 TypeScript（IAU 2006 岁差 + IAU 2000B 章动（77 项）+ 开普勒椭圆年像差，精度优于 Meeus 中等精度；黄金用例最大误差 < 4.2″，验收阈值 5″），星表来自 D3-Celestial（mag ≤ 5.0，星名来自 `data/raw/starnames.json`）。
 

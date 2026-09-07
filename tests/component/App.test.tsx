@@ -13,8 +13,9 @@ afterEach(cleanup);
 
 describe('App', () => {
   it('默认视图渲染摘要与星图', () => {
+    localStorage.clear();
     render(<App />);
-    expect(screen.getByTestId('star-canvas')).toBeTruthy();
+    expect(screen.getByTestId('skydome-fallback')).toBeTruthy();
     expect(screen.getByTestId('summary').textContent).toMatch(/可见星/);
   });
 
@@ -50,7 +51,9 @@ describe('App', () => {
   });
 
   it('显示比例横屏后画布为 16:9 并居中', () => {
+    localStorage.clear();
     render(<App />);
+    fireEvent.click(screen.getByRole('switch', { name: '2D 视图' }));
     fireEvent.click(screen.getByRole('button', { name: '菜单' }));
     fireEvent.change(screen.getByLabelText('显示比例'), { target: { value: 'landscape' } });
     fireEvent.click(screen.getByRole('button', { name: '应用' }));
@@ -76,10 +79,12 @@ describe('App', () => {
   });
 
   it('右上可切换 3D 视图', () => {
+    localStorage.clear();
     render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: '3D 视图' }));
     expect(screen.getByTestId('skydome-fallback')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: '2D 视图' }));
+    fireEvent.click(screen.getByRole('switch', { name: '2D 视图' }));
     expect(screen.getByTestId('star-canvas')).toBeTruthy();
+    fireEvent.click(screen.getByRole('switch', { name: '3D 视图' }));
+    expect(screen.getByTestId('skydome-fallback')).toBeTruthy();
   });
 });

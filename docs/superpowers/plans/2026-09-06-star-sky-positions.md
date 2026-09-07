@@ -1,4 +1,4 @@
-# 星空位置计算页（stardemo）实现计划
+# 星空位置计算页（starry-night）实现计划
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -31,7 +31,7 @@
 - [ ] **Step 1: 初始化 npm 项目并安装依赖**
 
 ```bash
-cd /Users/kkito/proj/demo/stardemo
+cd /Users/kkito/proj/demo/starry-night
 npm init -y
 npm i -D vite vitest typescript astronomy-engine
 ```
@@ -42,7 +42,7 @@ npm i -D vite vitest typescript astronomy-engine
 
 ```json
 {
-  "name": "stardemo",
+  "name": "starry-night",
   "private": true,
   "type": "module",
   "scripts": {
@@ -1151,7 +1151,7 @@ git commit -m "feat: 最小验证页 + vite 可部署构建"
 - [ ] **Step 1: 写 README.md**
 
 ````markdown
-# stardemo — 星空位置计算
+# starry-night — 星空位置计算
 
 给定经纬度与时刻，计算可见星星的位置并按视星等排序。算法核心为纯 TypeScript（Meeus 中等精度：岁差 + 章动 + 年像差），星表来自 D3-Celestial（mag ≤ 5.0），用 astronomy-engine 黄金用例验收（阈值 5″）。
 

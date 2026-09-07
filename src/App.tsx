@@ -6,13 +6,14 @@ import { zhName } from './lib/names';
 import { StarChart, CANVAS_MARGIN, useViewportSize } from './components/StarChart';
 import { SkyDome3D } from './components/SkyDome3D';
 import { SettingsDialog, toLocalInput, type ViewParams } from './components/SettingsDialog';
+import { ViewModeSwitch } from './components/ViewModeSwitch';
 import { StarTableDialog } from './components/StarTableDialog';
 import { loadViewPrefs, saveViewPrefs } from './lib/prefs';
 import { COLORS, FONTS } from './lib/tokens';
 
 const ASPECT_RATIO = { landscape: 16 / 9, portrait: 9 / 16 } as const;
 
-const DEFAULT_VIEW: ViewParams = { lat: 31.2304, lon: 121.4737, date: toLocalInput(new Date()), timeMode: 'live', topN: 50, aspect: 'auto', showSolar: true, mirror: false, shape: 'ellipse', viewMode: '2d' };
+const DEFAULT_VIEW: ViewParams = { lat: 31.2304, lon: 121.4737, date: toLocalInput(new Date()), timeMode: 'live', topN: 50, aspect: 'auto', showSolar: true, mirror: false, shape: 'ellipse', viewMode: '3d' };
 
 /** 按比例偏好计算画布尺寸：auto 跟随窗口，横/竖屏固定 16:9 / 9:16 并在视口内居中。 */
 function canvasSize(vp: { width: number; height: number }, aspect: ViewParams['aspect']): { width: number; height: number } {
@@ -99,6 +100,7 @@ export default function App() {
             mirror={view.mirror}
             shape={view.shape}
             track={track}
+            selectedId={selectedId}
             onSelect={setSelectedId}
           />
         )}
@@ -107,8 +109,7 @@ export default function App() {
         <button aria-label="菜单" style={menuButton} onClick={() => setSettingsOpen(true)}>☰</button>
       </div>
       <div style={{ position: 'absolute', top: 10, right: 10, display: 'flex', gap: 6 }}>
-        <button aria-label="2D 视图" style={menuButton} onClick={() => { setView((v) => { const next = { ...v, viewMode: '2d' as const }; saveViewPrefs(next); return next; }); }}>2D</button>
-        <button aria-label="3D 视图" style={menuButton} onClick={() => { setView((v) => { const next = { ...v, viewMode: '3d' as const }; saveViewPrefs(next); return next; }); }}>3D</button>
+        <ViewModeSwitch value={view.viewMode} onChange={(m) => setView((v) => { const next = { ...v, viewMode: m }; saveViewPrefs(next); return next; })} />
       </div>
       {sky.error ? (
         <p

@@ -35,9 +35,9 @@ describe('view 偏好持久化', () => {
   });
 
   it('存储数据非法时回退默认值', () => {
-    localStorage.setItem('stardemo.view', '{"lat":999}');
+    localStorage.setItem('starry-night.view', '{"lat":999}');
     expect(loadViewPrefs(base())).toEqual(base());
-    localStorage.setItem('stardemo.view', 'not json');
+    localStorage.setItem('starry-night.view', 'not json');
     expect(loadViewPrefs(base())).toEqual(base());
   });
 });

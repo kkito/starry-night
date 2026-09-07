@@ -190,6 +190,7 @@ export function StarChart({
   mirror = false,
   shape = 'ellipse',
   track = null,
+  selectedId = null,
   onSelect,
 }: {
   stars: DrawStar[];
@@ -198,6 +199,7 @@ export function StarChart({
   mirror?: boolean;
   shape?: ChartShape;
   track?: StarTrack | null;
+  selectedId?: string | null;
   /** 点击星星时回调其 id，点击空白处回调 null。 */
   onSelect?: (id: string | null) => void;
 }) {
@@ -229,10 +231,16 @@ export function StarChart({
   const onClick = (e: MouseEvent<HTMLCanvasElement>) => {
     onSelect?.(hitTest(e)?.id ?? null);
   };
+  const selected = selectedId ? (stars.find((x) => x.id === selectedId) ?? null) : null;
   return (
     <div style={{ position: 'relative' }} onMouseLeave={() => setHover(null)}>
       <canvas ref={ref} width={width} height={height} data-testid="star-canvas" onMouseMove={onMove} onClick={onClick} style={{ display: 'block' }} />
-      {hover && <StarTooltip star={hover.star} x={hover.px} y={hover.py} />}
+      {hover && !selected && <StarTooltip star={hover.star} x={hover.px} y={hover.py} />}
+      {selected && (
+        <div data-testid="selected-tooltip">
+          <StarTooltip star={selected} x={width / 2 + selected.x} y={height / 2 + selected.y} />
+        </div>
+      )}
     </div>
   );
 }
