@@ -78,14 +78,19 @@ export function SkyDome3D({ stars, track, selectedId, onSelect }: SkyDome3DProps
   const camRef = useRef({ yaw: (180 * Math.PI) / 180, pitch: (25 * Math.PI) / 180 });
   const [noGL, setNoGL] = useState(false);
   const [hover, setHover] = useState<{ star: DrawStar; px: number; py: number } | null>(null);
+  const [selectedPos, setSelectedPos] = useState<{ x: number; y: number } | null>(null);
   const hoverRef = useRef(hover);
   hoverRef.current = hover;
   const cbRef = useRef(onSelect);
   cbRef.current = onSelect;
   const dataRef = useRef({ stars, track });
   dataRef.current = { stars, track };
+  const selectedIdRef = useRef(selectedId);
+  selectedIdRef.current = selectedId;
+  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const applyCamRef = useRef<(() => void) | null>(null);
   const rebuildSceneRef = useRef<((stars: DrawStar[], track: StarTrack | null) => void) | null>(null);
+  const updateSelectedPosRef = useRef<(() => void) | null>(null);
 
   // 选中不碰视角：点击只叠加轨迹，相机 yaw/pitch 完全由用户拖拽决定。
 
@@ -93,6 +98,16 @@ export function SkyDome3D({ stars, track, selectedId, onSelect }: SkyDome3DProps
   useEffect(() => {
     rebuildSceneRef.current?.(stars, track);
   }, [stars, track]);
+
+  useEffect(() => {
+    const s = selectedId ? (stars.find((x) => x.id === selectedId) ?? null) : null;
+    if (!s) { setSelectedPos(null); return; }
+    if (updateSelectedPosRef.current) updateSelectedPosRef.current();
+    else {
+      // camera 尚未初始化时先用近似位置，待 mount 后校正
+      setSelectedPos({ x: 0, y: 0 });
+    }
+  }, [selectedId, stars]);
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -113,7 +128,27 @@ export function SkyDome3D({ stars, track, selectedId, onSelect }: SkyDome3DProps
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(65, w / h, 0.1, 2000);
     camera.position.set(0, 2, 0);
+    cameraRef.current = camera;
     const starTex = circleTexture();
+
+    const tmpVec = new THREE.Vector3();
+    const updateSelectedPos = () => {
+      const id = selectedIdRef.current;
+      if (!id) { setSelectedPos(null); return; }
+      const s = dataRef.current.stars.find((x) => x.id === id);
+      if (!s) { setSelectedPos(null); return; }
+      const vv = altAzToVec(s.az, s.alt, DOME_R * 0.98);
+      tmpVec.set(vv.x, vv.y, vv.z);
+      tmpVec.project(camera);
+      if (tmpVec.z > 1) { setSelectedPos(null); return; }
+      const rect = renderer.domElement.getBoundingClientRect();
+      const rw = rect.width || w;
+      const rh = rect.height || h;
+      setSelectedPos({ x: (tmpVec.x * 0.5 + 0.5) * rw, y: (-tmpVec.y * 0.5 + 0.5) * rh });
+    };
+    updateSelectedPosRef.current = updateSelectedPos;
+    // 若挂载前已选中，立即校正一次
+    if (selectedIdRef.current) updateSelectedPos();
 
     const applyCam = () => {
       const { yaw, pitch } = camRef.current;
@@ -123,6 +158,7 @@ export function SkyDome3D({ stars, track, selectedId, onSelect }: SkyDome3DProps
         -Math.cos(yaw) * Math.cos(pitch),
       );
       camera.lookAt(d.clone().multiplyScalar(100).add(camera.position));
+      updateSelectedPos();
     };
     applyCam();
 
@@ -359,6 +395,7 @@ export function SkyDome3D({ stars, track, selectedId, onSelect }: SkyDome3DProps
     const onWheel = (e: WheelEvent) => {
       camera.fov = Math.max(30, Math.min(100, camera.fov + e.deltaY * 0.02));
       camera.updateProjectionMatrix();
+      updateSelectedPos();
     };
     const el = renderer.domElement;
     el.addEventListener('pointerdown', onDown);
@@ -413,11 +450,9 @@ export function SkyDome3D({ stars, track, selectedId, onSelect }: SkyDome3DProps
     <div data-testid="skydome" style={{ position: 'relative', width: '100%', height: '100%', touchAction: 'none' }} onMouseLeave={() => setHover(null)}>
       <div ref={mountRef} style={{ width: '100%', height: '100%', touchAction: 'none' }} />
       {hover && !selectedStar && <StarTooltip star={hover.star} x={hover.px} y={hover.py} />}
-      {selectedStar && (
-        <div data-testid="selected-tooltip" style={{ position: 'absolute', left: 12, top: 12 }}>
-          <div style={{ position: 'relative', left: 0, top: 0 }}>
-            <StarTooltip star={selectedStar} x={0} y={0} />
-          </div>
+      {selectedStar && selectedPos && (
+        <div data-testid="selected-tooltip" style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+          <StarTooltip star={selectedStar} x={selectedPos.x} y={selectedPos.y} />
         </div>
       )}
     </div>
