@@ -75,7 +75,7 @@ function directionLabel(text: string, color = '#e8b45a'): THREE.Sprite {
 
 export function SkyDome3D({ stars, track, selectedId, onSelect }: SkyDome3DProps) {
   const mountRef = useRef<HTMLDivElement>(null);
-  const camRef = useRef({ yaw: (180 * Math.PI) / 180, pitch: (8 * Math.PI) / 180 });
+  const camRef = useRef({ yaw: (180 * Math.PI) / 180, pitch: (25 * Math.PI) / 180 });
   const [noGL, setNoGL] = useState(false);
   const [hover, setHover] = useState<{ star: DrawStar; px: number; py: number } | null>(null);
   const hoverRef = useRef(hover);
@@ -107,6 +107,7 @@ export function SkyDome3D({ stars, track, selectedId, onSelect }: SkyDome3DProps
     const w = mount.clientWidth || 800;
     const h = mount.clientHeight || 600;
     renderer.setSize(w, h);
+    renderer.domElement.style.touchAction = 'none';
     mount.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
@@ -156,6 +157,14 @@ export function SkyDome3D({ stars, track, selectedId, onSelect }: SkyDome3DProps
     };
     const RING_OPACITY = [0.6, 0.5, 0.5, 0.4, 0.35];
     ALT_RINGS.forEach((alt, i) => ring(alt, RING_OPACITY[i] ?? 0.5));
+    // 纬线（等高圈）仰角度数标注：10°/20°/30°/45°/60°，放在正南附近便于阅读
+    for (const alt of ALT_RINGS) {
+      const v = altAzToVec(180, alt, DOME_R * 0.985);
+      const sp = directionLabel(`${alt}°`, '#8ea0c8');
+      sp.position.set(v.x, v.y + 2, v.z);
+      sp.scale.set(18, 9, 1);
+      scene.add(sp);
+    }
     for (let az = 0; az < 360; az += 30) {
       const a = altAzToVec(az, 0, DOME_R * 0.985);
       const b = altAzToVec(az, 70, DOME_R * 0.985);
@@ -298,7 +307,7 @@ export function SkyDome3D({ stars, track, selectedId, onSelect }: SkyDome3DProps
       }
       const winG = new THREE.BufferGeometry();
       winG.setAttribute('position', new THREE.Float32BufferAttribute(winPts, 3));
-      scene.add(new THREE.Points(winG, new THREE.PointsMaterial({ map: starTex, color: 0xffdc78, size: 8, sizeAttenuation: false, transparent: true, opacity: 0.9, depthWrite: false })));
+      scene.add(new THREE.Points(winG, new THREE.PointsMaterial({ color: 0xffdc78, size: 8, sizeAttenuation: false, transparent: true, opacity: 0.9, depthWrite: false })));
     }
 
     // 地平线方位标注：东/南/西/北（正东 90° 等，标在地平线上方）
@@ -395,8 +404,8 @@ export function SkyDome3D({ stars, track, selectedId, onSelect }: SkyDome3DProps
     );
   }
   return (
-    <div data-testid="skydome" style={{ position: 'relative', width: '100%', height: '100%' }} onMouseLeave={() => setHover(null)}>
-      <div ref={mountRef} style={{ width: '100%', height: '100%' }} />
+    <div data-testid="skydome" style={{ position: 'relative', width: '100%', height: '100%', touchAction: 'none' }} onMouseLeave={() => setHover(null)}>
+      <div ref={mountRef} style={{ width: '100%', height: '100%', touchAction: 'none' }} />
       {hover && <StarTooltip star={hover.star} x={hover.px} y={hover.py} />}
     </div>
   );
