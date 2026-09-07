@@ -74,4 +74,12 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: '展开状态栏' }));
     expect(screen.getByTestId('summary')).toBeTruthy();
   });
+
+  it('右上可切换 3D 视图', () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: '3D 视图' }));
+    expect(screen.getByTestId('skydome-fallback')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: '2D 视图' }));
+    expect(screen.getByTestId('star-canvas')).toBeTruthy();
+  });
 });

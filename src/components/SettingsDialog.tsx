@@ -5,6 +5,7 @@ import { COLORS, FONTS, buttonStyle } from '../lib/tokens';
 
 export type AspectPref = 'auto' | 'landscape' | 'portrait';
 export type ShapePref = 'ellipse' | 'circle';
+export type ViewMode = '2d' | '3d';
 /** live：跟随当前时间（定期刷新）；fixed：使用选定的本地时间 */
 export type TimeMode = 'live' | 'fixed';
 
@@ -21,6 +22,7 @@ export interface ViewParams {
   mirror: boolean;
   /** 星图外轮廓形状 */
   shape: ShapePref;
+  viewMode: ViewMode;
 }
 
 /** 本地时间 → datetime-local 输入串（YYYY-MM-DDTHH:mm）。 */
@@ -40,6 +42,7 @@ export function validateView(v: ViewParams): string | null {
   if (!Number.isFinite(v.topN) || v.topN < 1 || v.topN > 500) return 'topN 必须在 [1, 500]';
   if (!['auto', 'landscape', 'portrait'].includes(v.aspect)) return 'aspect 无效';
   if (!['ellipse', 'circle'].includes(v.shape)) return 'shape 无效';
+  if (!['2d', '3d'].includes(v.viewMode)) return 'viewMode 无效';
   return null;
 }
 
@@ -55,7 +58,7 @@ interface Props {
 type Draft = Omit<{ [K in keyof ViewParams]: string }, 'showSolar' | 'mirror'> & { showSolar: boolean; mirror: boolean };
 
 function toDraft(v: ViewParams): Draft {
-  return { lat: String(v.lat), lon: String(v.lon), date: v.date, timeMode: v.timeMode, topN: String(v.topN), aspect: v.aspect, showSolar: v.showSolar, mirror: v.mirror, shape: v.shape };
+  return { lat: String(v.lat), lon: String(v.lon), date: v.date, timeMode: v.timeMode, topN: String(v.topN), aspect: v.aspect, showSolar: v.showSolar, mirror: v.mirror, shape: v.shape, viewMode: v.viewMode };
 }
 
 const fmt = (n: number) => String(Number(n.toFixed(4)));
@@ -107,6 +110,7 @@ export function SettingsDialog({ open, view, onClose, onApply, onOpenTable }: Pr
       showSolar: draft.showSolar,
       mirror: draft.mirror,
       shape: draft.shape as ViewParams['shape'],
+      viewMode: draft.viewMode as ViewMode,
     };
     const err = validateView(parsed);
     if (err) { setError(err); return; }

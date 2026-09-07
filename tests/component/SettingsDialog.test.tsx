@@ -7,7 +7,7 @@ import { CITIES, findCity } from '../../src/lib/cities';
 
 afterEach(cleanup);
 
-const view = { lat: 39.9, lon: 116.4, date: '2026-03-20T20:00', timeMode: 'fixed' as const, topN: 50, aspect: 'auto' as const, showSolar: true, mirror: false, shape: 'ellipse' as const };
+const view = { lat: 39.9, lon: 116.4, date: '2026-03-20T20:00', timeMode: 'fixed' as const, topN: 50, aspect: 'auto' as const, showSolar: true, mirror: false, shape: 'ellipse' as const, viewMode: '2d' as const };
 
 describe('validateView', () => {
   it('合法返回 null', () => {

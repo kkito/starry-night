@@ -4,7 +4,7 @@ import { loadViewPrefs, saveViewPrefs } from '../../src/lib/prefs';
 import type { ViewParams } from '../../src/components/SettingsDialog';
 
 // 与 App.tsx 的 DEFAULT_VIEW 保持一致
-const base = (): ViewParams => ({ lat: 31.2304, lon: 121.4737, date: '2026-03-20T20:00', timeMode: 'live', topN: 50, aspect: 'auto', showSolar: true, mirror: false, shape: 'ellipse' });
+const base = (): ViewParams => ({ lat: 31.2304, lon: 121.4737, date: '2026-03-20T20:00', timeMode: 'live', topN: 50, aspect: 'auto', showSolar: true, mirror: false, shape: 'ellipse', viewMode: '2d' });
 
 beforeEach(() => localStorage.clear());
 
@@ -23,6 +23,11 @@ describe('view 偏好持久化', () => {
     const restored = loadViewPrefs(base());
     const saved = new Date(restored.date).getTime();
     expect(Math.abs(Date.now() - saved)).toBeLessThan(60_000);
+  });
+
+  it('viewMode 持久化', () => {
+    saveViewPrefs({ ...base(), viewMode: '3d' });
+    expect(loadViewPrefs(base()).viewMode).toBe('3d');
   });
 
   it('无存储时回退默认值', () => {
