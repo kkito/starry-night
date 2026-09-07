@@ -52,6 +52,8 @@ export function SkyDome3D({ stars, track, selectedId, onSelect }: SkyDome3DProps
   cbRef.current = onSelect;
   const dataRef = useRef({ stars, track });
   dataRef.current = { stars, track };
+  const applyCamRef = useRef<(() => void) | null>(null);
+  const rebuildSceneRef = useRef<((stars: DrawStar[], track: StarTrack | null) => void) | null>(null);
 
   // 跟随选中：yaw = az，pitch = max(8°, alt * 0.5)
   useEffect(() => {
@@ -60,7 +62,13 @@ export function SkyDome3D({ stars, track, selectedId, onSelect }: SkyDome3DProps
     if (!s) return;
     camRef.current.yaw = (s.az * Math.PI) / 180;
     camRef.current.pitch = Math.max(8, s.alt * 0.5) * (Math.PI / 180);
+    applyCamRef.current?.();
   }, [selectedId, stars]);
+
+  // 星星/轨迹 prop 更新时重建动态场景对象（mount-effect 内注册 rebuild 实现）
+  useEffect(() => {
+    rebuildSceneRef.current?.(stars, track);
+  }, [stars, track]);
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -121,7 +129,8 @@ export function SkyDome3D({ stars, track, selectedId, onSelect }: SkyDome3DProps
         ),
       );
     };
-    ring(10, 0.6); ring(20, 0.5); ring(30, 0.5); ring(45, 0.4); ring(60, 0.35);
+    const RING_OPACITY = [0.6, 0.5, 0.5, 0.4, 0.35];
+    ALT_RINGS.forEach((alt, i) => ring(alt, RING_OPACITY[i] ?? 0.5));
     for (let az = 0; az < 360; az += 30) {
       const a = altAzToVec(az, 0, DOME_R * 0.985);
       const b = altAzToVec(az, 70, DOME_R * 0.985);
@@ -133,13 +142,26 @@ export function SkyDome3D({ stars, track, selectedId, onSelect }: SkyDome3DProps
       );
     }
 
-    // 星星 Points（vertexColors）
-    const starObjs = dataRef.current.stars;
-    const starPos: THREE.Vector3[] = starObjs.map((s) => {
-      const v = altAzToVec(s.az, s.alt, DOME_R * 0.98);
-      return new THREE.Vector3(v.x, v.y, v.z);
-    });
-    {
+    applyCamRef.current = applyCam;
+
+    // 星星 Points（vertexColors）+ 轨迹：放在动态 group，prop 更新时重建
+    const dynamic = new THREE.Group();
+    scene.add(dynamic);
+    const starPos: THREE.Vector3[] = [];
+    const disposeObj = (o: THREE.Object3D) => {
+      const mesh = o as THREE.Mesh;
+      const g = mesh.geometry as THREE.BufferGeometry | undefined;
+      g?.dispose?.();
+      const m = mesh.material as THREE.Material | THREE.Material[] | undefined;
+      if (Array.isArray(m)) m.forEach((x) => x.dispose?.());
+      else m?.dispose?.();
+    };
+    const buildStars = (starObjs: DrawStar[]) => {
+      starPos.length = 0;
+      for (const s of starObjs) {
+        const v = altAzToVec(s.az, s.alt, DOME_R * 0.98);
+        starPos.push(new THREE.Vector3(v.x, v.y, v.z));
+      }
       const g = new THREE.BufferGeometry().setFromPoints(starPos);
       const cols: number[] = [];
       const c = new THREE.Color();
@@ -149,41 +171,47 @@ export function SkyDome3D({ stars, track, selectedId, onSelect }: SkyDome3DProps
       }
       g.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
       const m = new THREE.PointsMaterial({ size: 4, sizeAttenuation: false, vertexColors: true, transparent: true, opacity: 0.95, depthWrite: false });
-      scene.add(new THREE.Points(g, m));
-    }
-
-    // 轨迹：过去实线 / 未来虚线，alt<=0 段跳过
-    {
-      const t = dataRef.current.track;
-      if (t) {
-        const past: THREE.Vector3[] = [];
-        const future: THREE.Vector3[] = [];
-        for (let i = 1; i < t.points.length; i++) {
-          const a = t.points[i - 1]!;
-          const b = t.points[i]!;
-          if (a.alt <= 0 || b.alt <= 0) continue;
-          const va = altAzToVec(a.az, a.alt, DOME_R * 0.98);
-          const vb = altAzToVec(b.az, b.alt, DOME_R * 0.98);
-          const seg = [new THREE.Vector3(va.x, va.y, va.z), new THREE.Vector3(vb.x, vb.y, vb.z)];
-          (i <= t.pastCount ? past : future).push(...seg);
-        }
-        if (past.length) {
-          scene.add(new THREE.LineSegments(
-            new THREE.BufferGeometry().setFromPoints(past),
-            new THREE.LineBasicMaterial({ color: new THREE.Color(COLORS.accent) }),
-          ));
-        }
-        if (future.length) {
-          const g = new THREE.BufferGeometry().setFromPoints(future);
-          const l = new THREE.LineSegments(
-            g,
-            new THREE.LineDashedMaterial({ color: new THREE.Color(COLORS.accent), dashSize: 5, gapSize: 5 }),
-          );
-          l.computeLineDistances();
-          scene.add(l);
-        }
+      return new THREE.Points(g, m);
+    };
+    const buildTrack = (t: StarTrack | null): THREE.Object3D[] => {
+      if (!t) return [];
+      const past: THREE.Vector3[] = [];
+      const future: THREE.Vector3[] = [];
+      for (let i = 1; i < t.points.length; i++) {
+        const a = t.points[i - 1]!;
+        const b = t.points[i]!;
+        if (a.alt <= 0 || b.alt <= 0) continue;
+        const va = altAzToVec(a.az, a.alt, DOME_R * 0.98);
+        const vb = altAzToVec(b.az, b.alt, DOME_R * 0.98);
+        const seg = [new THREE.Vector3(va.x, va.y, va.z), new THREE.Vector3(vb.x, vb.y, vb.z)];
+        (i <= t.pastCount ? past : future).push(...seg);
       }
-    }
+      const out: THREE.Object3D[] = [];
+      if (past.length) {
+        out.push(new THREE.LineSegments(
+          new THREE.BufferGeometry().setFromPoints(past),
+          new THREE.LineBasicMaterial({ color: new THREE.Color(COLORS.accent) }),
+        ));
+      }
+      if (future.length) {
+        const g = new THREE.BufferGeometry().setFromPoints(future);
+        const l = new THREE.LineSegments(
+          g,
+          new THREE.LineDashedMaterial({ color: new THREE.Color(COLORS.accent), dashSize: 5, gapSize: 5 }),
+        );
+        l.computeLineDistances();
+        out.push(l);
+      }
+      return out;
+    };
+    rebuildSceneRef.current = (starObjs: DrawStar[], t: StarTrack | null) => {
+      for (const o of [...dynamic.children]) {
+        dynamic.remove(o);
+        disposeObj(o);
+      }
+      dynamic.add(buildStars(starObjs), ...buildTrack(t));
+    };
+    rebuildSceneRef.current(dataRef.current.stars, dataRef.current.track);
 
     // 剪影：树 @TREE_AZ / 楼 @BUILDING_AZ
     {
@@ -227,7 +255,7 @@ export function SkyDome3D({ stars, track, selectedId, onSelect }: SkyDome3DProps
 
     // 交互：拖拽改 yaw/pitch，滚轮改 fov；raycast 悬停 + 点击选中
     const raycaster = new THREE.Raycaster();
-    ;(raycaster as unknown as { params: { Points: { threshold: number } } }).params = { Points: { threshold: 4 } };
+    raycaster.params.Points.threshold = 4;
     const ndc = new THREE.Vector2();
     const pick = (e: PointerEvent): number => {
       const rect = renderer.domElement.getBoundingClientRect();
@@ -282,6 +310,8 @@ export function SkyDome3D({ stars, track, selectedId, onSelect }: SkyDome3DProps
 
     return () => {
       cancelAnimationFrame(raf);
+      applyCamRef.current = null;
+      rebuildSceneRef.current = null;
       el.removeEventListener('pointerdown', onDown);
       el.removeEventListener('pointermove', onMove);
       el.removeEventListener('pointerup', onUp);
