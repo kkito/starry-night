@@ -232,17 +232,21 @@ export function Sky3D({ stars, track, selectedId, onSelect }: Sky3DProps) {
     let cancelled = false;
     let cancelLoop: (() => void) | null = null;
     queryCanvasRect();
-    // weapp：selectorQuery.node() 拿 Canvas 实例；H5：document canvas（getGLCanvasNode 内按 TARO_ENV 分流）。
-    // 注意：node 必须调 getContext('webgl') 拿 GL 上下文再传给 three——小程序 Canvas 节点本身
-    // 没有 getContext 直调 three 会报 t.getContext is not a function；也不要手动创建 WebGLRenderer
-    // 兜底（会走到浏览器 canvas，在小程序里无意义），失败直接 noGL。
+    // 官方文档：<Canvas type="webgl"> 经 query.node() 拿 canvas，再 getContext('webgl')。
+    // three 0.185 的 WebGLRenderer 内部只认 canvas.getContext('webgl2')，所以不要手动
+    // getContext 再传 context——小程序的 getContext 只认 'webgl'，'webgl2' 会报 Invalid context type。
+    // 正确姿势：把 node 直接当 canvas 传给 three，让 three 自己调 getContext。
+    // 注意：node 必须补 addEventListener/setAttribute 垫片（three 初始化时要调），
+    // 否则报 t.getContext is not a function 一类错。
     getGLCanvasNode(SKY3D_CANVAS_ID).then((node: any) => {
       if (cancelled) return;
       let renderer: THREE.WebGLRenderer;
       try {
-        const gl = node.getContext?.('webgl', { alpha: true, antialias: true }) ?? null;
-        if (!gl) { setNoGL(true); return; }
-        renderer = new THREE.WebGLRenderer({ canvas: node, context: gl });
+        if (typeof node?.getContext !== 'function') { setNoGL(true); return; }
+        if (typeof node.addEventListener !== 'function') node.addEventListener = () => {};
+        if (typeof node.removeEventListener !== 'function') node.removeEventListener = () => {};
+        if (typeof node.setAttribute !== 'function') node.setAttribute = () => {};
+        renderer = new THREE.WebGLRenderer({ canvas: node, antialias: true, alpha: true });
       } catch {
         setNoGL(true);
         return;
@@ -474,7 +478,7 @@ export function Sky3D({ stars, track, selectedId, onSelect }: Sky3DProps) {
   return (
     <View data-testid='skydome' style={{ position: 'relative', width: '100%', height: '100%' }}>
       <Canvas
-        type='2d'
+        type='webgl'
         canvasId={SKY3D_CANVAS_ID}
         id={SKY3D_CANVAS_ID}
         style={{ width: `${vp.width}px`, height: `${vp.height}px` }}

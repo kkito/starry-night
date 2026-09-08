@@ -2,6 +2,8 @@ import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('@tarojs/taro', () => ({
   getSystemInfoSync: vi.fn(),
+  getWindowInfo: vi.fn(),
+  getDeviceInfo: vi.fn(),
   createSelectorQuery: vi.fn(),
   createOffscreenCanvas: vi.fn(),
 }));
@@ -19,18 +21,18 @@ describe('web-env', () => {
     expect(clampPixelRatio(-1)).toBe(1);
     expect(clampPixelRatio(NaN)).toBe(1);
   });
-  it('viewport has positive dims', () => {
-    vi.spyOn(Taro, 'getSystemInfoSync').mockReturnValue({
-      windowWidth: 390,
-      windowHeight: 844,
-      pixelRatio: 3,
-    } as any);
+  it('viewport prefers window/device info over legacy', () => {
+    vi.spyOn(Taro as any, 'getWindowInfo').mockReturnValue({ windowWidth: 390, windowHeight: 844 });
+    vi.spyOn(Taro as any, 'getDeviceInfo').mockReturnValue({ pixelRatio: 3 });
+    vi.spyOn(Taro, 'getSystemInfoSync').mockReturnValue({ windowWidth: 100, windowHeight: 100, pixelRatio: 1 } as any);
     const vp = getViewport();
     expect(vp.width).toBeGreaterThan(0);
     expect(vp.pixelRatio).toBeLessThanOrEqual(2);
     expect(vp).toEqual({ width: 390, height: 844, pixelRatio: 2 });
   });
-  it('viewport falls back to defaults', () => {
+  it('viewport falls back to legacy then defaults', () => {
+    vi.spyOn(Taro as any, 'getWindowInfo').mockReturnValue({});
+    vi.spyOn(Taro as any, 'getDeviceInfo').mockReturnValue({});
     vi.spyOn(Taro, 'getSystemInfoSync').mockReturnValue({} as any);
     expect(getViewport()).toEqual({ width: 375, height: 667, pixelRatio: 2 });
   });

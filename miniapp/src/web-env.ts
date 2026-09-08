@@ -8,8 +8,16 @@ export function clampPixelRatio(pr: number): number {
 }
 
 export function getViewport(): { width: number; height: number; pixelRatio: number } {
-  const info = Taro.getSystemInfoSync();
-  return { width: info.windowWidth ?? 375, height: info.windowHeight ?? 667, pixelRatio: clampPixelRatio(info.pixelRatio ?? 2) };
+  // 新版微信不再维护 getSystemInfoSync（报 deprecation 走 getWindowInfo/getDeviceInfo），
+  // Taro 侧用 getWindowInfo 拿宽高 + getDeviceInfo 拿 pixelRatio；H5/低版本回退旧 API。
+  const T: any = Taro as any;
+  const win = typeof T.getWindowInfo === 'function' ? T.getWindowInfo() : {};
+  const dev = typeof T.getDeviceInfo === 'function' ? T.getDeviceInfo() : {};
+  const legacy = typeof Taro.getSystemInfoSync === 'function' ? Taro.getSystemInfoSync() : {};
+  const width = win.windowWidth ?? legacy.windowWidth ?? 375;
+  const height = win.windowHeight ?? legacy.windowHeight ?? 667;
+  const pixelRatio = dev.pixelRatio ?? legacy.pixelRatio ?? 2;
+  return { width, height, pixelRatio: clampPixelRatio(pixelRatio) };
 }
 
 export type FrameCallback = (time: number) => void;
