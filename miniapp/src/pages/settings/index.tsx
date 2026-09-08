@@ -45,6 +45,25 @@ export default function Settings() {
           <View>{view.timeMode === 'live' ? '实时（跟随当前时间）' : '选定时间'}</View>
         </Picker>
       </View>
+      {view.timeMode === 'fixed' && (
+        <View>
+          <Text>选定时间（格式与 Web 版 SettingsDialog.toLocalInput 一致：YYYY-MM-DDTHH:mm）</Text>
+          <Picker
+            mode='date'
+            value={view.date.slice(0, 10)}
+            onChange={(e) => apply({ date: `${String(e.detail.value)}T${view.date.slice(11, 16)}` })}
+          >
+            <View data-testid='fixed-date'>日期：{view.date.slice(0, 10)}</View>
+          </Picker>
+          <Picker
+            mode='time'
+            value={view.date.slice(11, 16)}
+            onChange={(e) => apply({ date: `${view.date.slice(0, 10)}T${String(e.detail.value)}` })}
+          >
+            <View data-testid='fixed-time'>时间：{view.date.slice(11, 16)}</View>
+          </Picker>
+        </View>
+      )}
       <View>
         <Text>显示最亮的 N 颗（{view.topN}）</Text>
         <Slider min={TOP_N_MIN} max={TOP_N_MAX} step={1} value={view.topN} onChange={(e) => apply({ topN: e.detail.value })} showValue />

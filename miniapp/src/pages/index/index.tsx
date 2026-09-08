@@ -15,7 +15,7 @@ import { StarChart } from '../../components/StarChart';
 import { Sky3D } from '../../components/Sky3D';
 import { ViewModeSwitch } from '../../components/ViewModeSwitch';
 import { StarTooltip } from '../../components/StarTooltip';
-import { SELECTED_KEY } from '../../lib/selected';
+import { consumeSelectedId } from '../../lib/selected';
 import { getViewport } from '../../web-env';
 import { loadViewPrefs } from '../../adapters/prefs';
 
@@ -38,10 +38,8 @@ export default function Index() {
   // 子页面（设置/星表）返回时刷新：重载 prefs + 读取星表回选 id（见 table/index.tsx 注释）。
   useDidShow(() => {
     setView(loadViewPrefs(DEFAULT_VIEW));
-    try {
-      const id = Taro.getStorageSync(SELECTED_KEY);
-      if (typeof id === 'string' && id) setSelectedId(id);
-    } catch { /* 无回选 */ }
+    const id = consumeSelectedId();
+    if (id) setSelectedId(id);
   });
 
   const vp = getViewport();

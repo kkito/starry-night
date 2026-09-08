@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { View, Text, Input, Button } from '@tarojs/components';
 import * as Taro from '@tarojs/taro';
+import { filterTableStars, formatStarMag, belowHorizonNote } from '../../lib/table-format';
 import { computeSky } from '../../../../src/core/sky';
 import { computeSolarBodies } from '../../../../src/core/ephemeris';
 import { toLocalInput, type ViewParams } from '../../../../src/components/SettingsDialog';
@@ -21,13 +22,7 @@ export default function Table() {
   const date = view.timeMode === 'live' ? new Date() : new Date(view.date);
   const { stars } = computeSky({ lat: view.lat, lon: view.lon, date });
   const solar = view.showSolar ? computeSolarBodies({ lat: view.lat, lon: view.lon, date }) : [];
-  const shown = stars
-    .slice(0, view.topN)
-    .filter((s) => {
-      if (!q) return true;
-      const ql = q.toLowerCase();
-      return (s.name ?? s.id).toLowerCase().includes(ql);
-    })
+  const shown = filterTableStars(stars.slice(0, view.topN), q)
     .sort((a, b) => a.mag - b.mag);
 
   const pick = (id: string) => {
@@ -40,16 +35,19 @@ export default function Table() {
   return (
     <View style={{ padding: 16 }}>
       <Input data-testid='filter' placeholder='过滤星名' value={q} onInput={(e) => setQ(e.detail.value)} />
+      <View style={{ display: 'flex', flexDirection: 'row', gap: 8 }}>
+        <Text>名称</Text><Text>星等</Text><Text>高度</Text><Text>方位</Text>
+      </View>
       {solar.length > 0 && <Text>—— 太阳系 ——</Text>}
       {solar.map((b) => (
         <View key={b.id} data-testid={`row-${b.id}`} onClick={() => pick(b.id)}>
-          <Text>{b.name} {b.mag.toFixed(2)} {b.alt.toFixed(1)}° {b.az.toFixed(1)}°</Text>
+          <Text>{b.name}{b.nameEn ? ` ${b.nameEn}` : ''} {b.mag.toFixed(2)} {b.alt.toFixed(1)}°{belowHorizonNote(b.alt)} {b.az.toFixed(1)}°</Text>
         </View>
       ))}
       {solar.length > 0 && <Text>—— 恒星 ——</Text>}
       {shown.map((s) => (
         <View key={s.id} data-testid={`row-${s.id}`} onClick={() => pick(s.id)}>
-          <Text>{s.name ?? s.id} {s.mag} {s.alt.toFixed(1)}° {s.az.toFixed(1)}°</Text>
+          <Text>{s.name ?? s.id}{s.nameEn ? ` ${s.nameEn}` : ''} {formatStarMag(s.mag)} {s.alt.toFixed(1)}°{belowHorizonNote(s.alt)} {s.az.toFixed(1)}°</Text>
         </View>
       ))}
       <Button onClick={() => Taro.navigateBack()}>关闭</Button>
