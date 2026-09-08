@@ -1,4 +1,6 @@
 import type { UserConfigExport } from '@tarojs/cli';
+import devConfig from './dev';
+import prodConfig from './prod';
 
 const config: UserConfigExport<'webpack5'> = {
   projectName: 'miniapp',
@@ -39,4 +41,12 @@ const config: UserConfigExport<'webpack5'> = {
   },
 };
 
-export default config;
+export default function defineConfig(
+  merge: (base: unknown, ...sources: unknown[]) => Record<string, unknown>,
+) {
+  const base = { ...config };
+  if (process.env.NODE_ENV === 'development') {
+    return merge(base, devConfig);
+  }
+  return merge(base, prodConfig);
+}

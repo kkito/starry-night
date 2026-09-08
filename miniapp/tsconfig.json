@@ -1,16 +1,7 @@
 {
+  "extends": "../tsconfig.json",
   "compilerOptions": {
-    "target": "ES2020",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "jsx": "react-jsx",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
-    "types": ["node", "@tarojs/taro"]
+    "types": ["vite/client", "node", "@tarojs/taro"]
   },
-  "include": ["src"]
+  "include": ["src", "../src/core", "../src/lib", "../data"]
 }
