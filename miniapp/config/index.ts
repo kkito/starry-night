@@ -1,3 +1,4 @@
+import path from 'path';
 import type { UserConfigExport } from '@tarojs/cli';
 import devConfig from './dev';
 import prodConfig from './prod';
@@ -21,7 +22,17 @@ const config: UserConfigExport<'webpack5'> = {
   },
   framework: 'react',
   compiler: 'webpack5',
+  // 验证性配置：把仓根外 ../src 纳入 babel-loader 处理范围（Task 2）。
+  // 原因：Taro 默认 script rule 只含 sourceDir，根外 TS 会报 Module parse failed（type 语法无法解析）。
+  // 实测：compile.include 与顶层 webpackChain 均无效，mini.webpackChain 生效。
   mini: {
+    webpackChain(chain) {
+      const rootSrc = path.resolve(__dirname, '..', '..', 'src');
+      chain.module
+        .rule('script')
+        .include.add(rootSrc)
+        .end();
+    },
     postcss: {
       pxtransform: {
         enable: true,

@@ -237,12 +237,18 @@ importers:
       '@tarojs/webpack5-runner':
         specifier: ^3.6.40
         version: 3.6.40(@babel/core@7.29.7(supports-color@8.1.1))(@swc/core@1.3.96)(@tarojs/components@3.6.40(@tarojs/helper@3.6.40(supports-color@8.1.1))(@tarojs/runtime@3.6.40(@tarojs/shared@3.6.40))(@tarojs/shared@3.6.40)(postcss@8.5.28)(react@18.3.1))(@tarojs/runtime@3.6.40(@tarojs/shared@3.6.40))(@tarojs/shared@3.6.40)(@tarojs/taro@3.6.40(@tarojs/helper@3.6.40(supports-color@8.1.1))(@tarojs/runtime@3.6.40(@tarojs/shared@3.6.40))(postcss@8.5.28))(@vue/compiler-sfc@3.5.42)(clean-css@5.3.3)(cssnano@5.1.15(postcss@8.5.28))(debug@4.4.3(supports-color@8.1.1))(html-minifier-terser@6.1.0)(lightningcss@1.33.0)(postcss@8.5.28)(prettier@2.8.8)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supports-color@8.1.1)(typescript@5.9.3)(uglify-js@3.19.3)(webpack@5.78.0(@swc/core@1.3.96)(clean-css@5.3.3)(cssnano@5.1.15(postcss@8.5.28))(csso@5.0.5)(esbuild@0.19.12)(html-minifier-terser@6.1.0)(lightningcss@1.33.0)(postcss@8.5.28)(uglify-js@3.19.3))
+      astronomy-engine:
+        specifier: ^2.1.19
+        version: 2.1.19
       react:
         specifier: ^18.3.1
         version: 18.3.1
       react-dom:
         specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
+      three:
+        specifier: ^0.185.1
+        version: 0.185.1
     devDependencies:
       '@tarojs/cli':
         specifier: ^3.6.40
@@ -1964,6 +1970,9 @@ packages:
   assert-plus@1.0.0:
     resolution: {integrity: sha512-NfJ4UzBCcQGLDlQq7nHxH+tv3kyZ0hHQqF5BO6J7tNJeP5do1llPr8dZ8zHonfhAu0PHAdMkSo+8o0wxg9lZWw==}
     engines: {node: '>=0.8'}
+
+  astronomy-engine@2.1.19:
+    resolution: {integrity: sha512-8yWKNf7UeNbH458h3sAJ6ZgAjE5jTXp/mNNRFoC20j2SHwZIjAQeEsBB2Q3uCFRaTCCJRv33K2XhkhZQMXoX6w==}
 
   asynckit@0.4.0:
     resolution: {integrity: sha512-Oei9OH4tRh0YqU3GxhX79dM/mwVgvbZJaSNaRk+bshkj0S5cfHcgYakreBjrHwatXKbz+IoIdYLxrKim2MjW0Q==}
@@ -5807,6 +5816,9 @@ packages:
   thenify@3.3.1:
     resolution: {integrity: sha512-RVZSIV5IG10Hk3enotrhvz0T9em6cyHBLkH/YAZuKqd8hRkKhSfCGIcP2KUY0EPxndzANBmNllzWPwak+bheSw==}
 
+  three@0.185.1:
+    resolution: {integrity: sha512-5aojFCXKwnjBRZvUnt3WFfEcvUJgkN5LlijRFN95hMy8WVkG4I0QNcJE+OuWvuJ0bOdStrbfXn0pkd6/QyiAlg==}
+
   throat@6.0.2:
     resolution: {integrity: sha512-WKexMoJj3vEuK0yFEapj8y64V0A6xcuPuK9Gt1d0R+dzCSJc0lHqQytAbSB4cDAK0dWh4T0E2ETkoLE2WZ41OQ==}
 
@@ -8531,6 +8543,8 @@ snapshots:
       safer-buffer: 2.1.2
 
   assert-plus@1.0.0: {}
+
+  astronomy-engine@2.1.19: {}
 
   asynckit@0.4.0: {}
 
@@ -12585,6 +12599,8 @@ snapshots:
   thenify@3.3.1:
     dependencies:
       any-promise: 1.3.0
+
+  three@0.185.1: {}
 
   throat@6.0.2: {}
 
