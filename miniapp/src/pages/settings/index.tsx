@@ -2,14 +2,20 @@ import { useState } from 'react';
 import { View, Text, Input, Picker, Switch, Slider, Button } from '@tarojs/components';
 import * as Taro from '@tarojs/taro';
 import { toLocalInput, validateView, TOP_N_MIN, TOP_N_MAX, type ViewParams } from '../../../../src/components/SettingsDialog';
+import { CITIES } from '../../../../src/lib/cities';
+import { pickCityCoords } from '../../lib/city-pick';
+import { getCurrentPosition } from '../../adapters/geolocation';
 import { loadViewPrefs, saveViewPrefs } from '../../adapters/prefs';
 
-const DEFAULT_VIEW: ViewParams = { lat: 31.2304, lon: 121.4737, date: toLocalInput(new Date()), timeMode: 'live', topN: 50, aspect: 'auto', showSolar: true, mirror: false, shape: 'ellipse', viewMode: '2d' };
+// 默认 viewMode 跟 Web 版一致为 '3d'（根 App.tsx DEFAULT_VIEW）。
+const DEFAULT_VIEW: ViewParams = { lat: 31.2304, lon: 121.4737, date: toLocalInput(new Date()), timeMode: 'live', topN: 50, aspect: 'auto', showSolar: true, mirror: false, shape: 'ellipse', viewMode: '3d' };
 
 /** 设置子页面：字段与 Web 版 SettingsDialog 对齐，即时写 prefs（Task 3 adapters），返回主页面 onShow 重载生效。 */
 export default function Settings() {
   const [view, setView] = useState<ViewParams>(() => loadViewPrefs(DEFAULT_VIEW));
   const [error, setError] = useState<string | null>(null);
+  const [city, setCity] = useState('');
+  const [locating, setLocating] = useState(false);
 
   const apply = (patch: Partial<ViewParams>) => {
     const next = { ...view, ...patch };
@@ -20,16 +26,51 @@ export default function Settings() {
     saveViewPrefs(next);
   };
 
+  const pickCity = (name: string) => {
+    setCity(name);
+    const coords = pickCityCoords(name);
+    if (coords) apply(coords);
+    else setError(null);
+  };
+
+  const locate = async () => {
+    setLocating(true);
+    setError(null);
+    try {
+      const pos = await getCurrentPosition();
+      setCity('');
+      apply({ lat: pos.lat, lon: pos.lon });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '定位失败');
+    } finally {
+      setLocating(false);
+    }
+  };
+
   return (
     <View style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
       <Text style={{ fontSize: 15, fontWeight: 600 }}>设置</Text>
       <View>
+        <Text>城市</Text>
+        <Picker
+          mode='selector'
+          range={['手动输入', ...CITIES.map((c) => c.name)]}
+          value={city ? CITIES.findIndex((c) => c.name === city) + 1 : 0}
+          onChange={(e) => pickCity(Number(e.detail.value) === 0 ? '' : CITIES[Number(e.detail.value) - 1]!.name)}
+        >
+          <View data-testid='city'>{city || '手动输入'}</View>
+        </Picker>
+        <Button data-testid='locate' onClick={locate} disabled={locating}>
+          {locating ? '定位中…' : '定位当前'}
+        </Button>
+      </View>
+      <View>
         <Text>纬度</Text>
-        <Input data-testid='lat' type='digit' value={String(view.lat)} onInput={(e) => apply({ lat: Number(e.detail.value) })} />
+        <Input data-testid='lat' type='digit' value={String(view.lat)} onInput={(e) => { setCity(''); apply({ lat: Number(e.detail.value) }); }} />
       </View>
       <View>
         <Text>经度</Text>
-        <Input data-testid='lon' type='digit' value={String(view.lon)} onInput={(e) => apply({ lon: Number(e.detail.value) })} />
+        <Input data-testid='lon' type='digit' value={String(view.lon)} onInput={(e) => { setCity(''); apply({ lon: Number(e.detail.value) }); }} />
       </View>
       <View>
         <Text>时间模式</Text>

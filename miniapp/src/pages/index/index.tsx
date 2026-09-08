@@ -16,10 +16,12 @@ import { Sky3D } from '../../components/Sky3D';
 import { ViewModeSwitch } from '../../components/ViewModeSwitch';
 import { StarTooltip } from '../../components/StarTooltip';
 import { consumeSelectedId } from '../../lib/selected';
+import { canvasSize } from '../../lib/canvas-size';
 import { getViewport } from '../../web-env';
-import { loadViewPrefs } from '../../adapters/prefs';
+import { loadViewPrefs, saveViewPrefs } from '../../adapters/prefs';
 
-const DEFAULT_VIEW: ViewParams = { lat: 31.2304, lon: 121.4737, date: toLocalInput(new Date()), timeMode: 'live', topN: 50, aspect: 'auto', showSolar: true, mirror: false, shape: 'ellipse', viewMode: '2d' };
+// 默认 viewMode 跟 Web 版一致为 '3d'（根 App.tsx DEFAULT_VIEW；低端机若卡顿可在设置页切回 2D）。
+const DEFAULT_VIEW: ViewParams = { lat: 31.2304, lon: 121.4737, date: toLocalInput(new Date()), timeMode: 'live', topN: 50, aspect: 'auto', showSolar: true, mirror: false, shape: 'ellipse', viewMode: '3d' };
 
 export const VIEW_MODES = ['2d', '3d'] as const;
 
@@ -43,8 +45,8 @@ export default function Index() {
   });
 
   const vp = getViewport();
-  const cw = vp.width;
-  const ch = vp.height;
+  // 画布尺寸经 canvasSize（根 App.tsx 逻辑，I4）换算：auto 跟随视口，横/竖屏按 16:9/9:16 收敛。
+  const { width: cw, height: ch } = canvasSize(vp, view.aspect);
   const half = Math.min(cw, ch) / 2;
   const effRx = view.shape === 'circle' ? half - CANVAS_MARGIN : cw / 2 - CANVAS_MARGIN;
   const effRy = view.shape === 'circle' ? half - CANVAS_MARGIN : ch / 2 - CANVAS_MARGIN;
@@ -94,7 +96,7 @@ export default function Index() {
         <Text>错误：{sky.error}</Text>
       ) : (
         <>
-          <ViewModeSwitch value={view.viewMode} onChange={(m) => setView((v) => ({ ...v, viewMode: m }))} />
+          <ViewModeSwitch value={view.viewMode} onChange={(m) => setView((v) => { const next = { ...v, viewMode: m }; saveViewPrefs(next); return next; })} />
           <View style={{ display: 'flex', flexDirection: 'row', gap: 8 }}>
             <Text data-testid='open-settings' onClick={() => Taro.navigateTo({ url: '/pages/settings/index' })}>设置</Text>
             <Text data-testid='open-table' onClick={() => Taro.navigateTo({ url: '/pages/table/index' })}>星表</Text>
@@ -123,7 +125,8 @@ export default function Index() {
             const sel = selectedId ? sky.drawStars.find((d) => d.id === selectedId) ?? null : null;
             return sel ? (
               <View style={{ position: 'relative' }}>
-                <StarTooltip star={sel} x={sel.x} y={sel.y} />
+                {/* DrawStar 的 x/y 是相对画布中心的偏移（见 drawSky: cx+s.x），此处照搬根 StarChart.tsx:241 传画布绝对坐标 */}
+                <StarTooltip star={sel} x={cw / 2 + sel.x} y={ch / 2 + sel.y} />
               </View>
             ) : null;
           })()}

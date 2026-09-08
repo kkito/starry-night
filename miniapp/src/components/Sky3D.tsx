@@ -86,8 +86,14 @@ const disposeObj = (o: THREE.Object3D) => {
     const g = mesh.geometry as THREE.BufferGeometry | undefined;
     g?.dispose?.();
     const m = mesh.material as THREE.Material | THREE.Material[] | undefined;
-    if (Array.isArray(m)) m.forEach((x) => x.dispose?.());
-    else m?.dispose?.();
+    // M3：SpriteMaterial 的 map（方位文字/星点纹理）需单独 dispose，否则显存泄漏。
+    const disposeMap = (x: THREE.Material) => {
+      const withMap = x as THREE.Material & { map?: { dispose?: () => void } | null };
+      withMap.map?.dispose?.();
+      x.dispose?.();
+    };
+    if (Array.isArray(m)) m.forEach(disposeMap);
+    else if (m) disposeMap(m);
   });
 };
 
