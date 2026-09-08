@@ -10,13 +10,16 @@ import { zhName } from '../../../../src/lib/names';
 import { CANVAS_MARGIN } from '../../../../src/components/StarChart';
 import { toLocalInput, type ViewParams } from '../../../../src/components/SettingsDialog';
 import { StarChart } from '../../components/StarChart';
+import { Sky3D } from '../../components/Sky3D';
 import { getViewport } from '../../web-env';
 import { loadViewPrefs } from '../../adapters/prefs';
 
 const DEFAULT_VIEW: ViewParams = { lat: 31.2304, lon: 121.4737, date: toLocalInput(new Date()), timeMode: 'live', topN: 50, aspect: 'auto', showSolar: true, mirror: false, shape: 'ellipse', viewMode: '2d' };
 
+export const VIEW_MODES = ['2d', '3d'] as const;
+
 export default function Index() {
-  const [view] = useState<ViewParams>(() => loadViewPrefs(DEFAULT_VIEW));
+  const [view, setView] = useState<ViewParams>(() => loadViewPrefs(DEFAULT_VIEW));
   // 实时模式的心跳：每 5 分钟更新一次（承接 Web 版 App.tsx 状态模型）
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -80,6 +83,18 @@ export default function Index() {
         <Text>错误：{sky.error}</Text>
       ) : (
         <>
+          <View data-testid='viewmode-switch'>
+            <Text data-testid='mode-2d' onClick={() => setView((v) => ({ ...v, viewMode: '2d' }))}>2D</Text>
+            <Text data-testid='mode-3d' onClick={() => setView((v) => ({ ...v, viewMode: '3d' }))}>3D</Text>
+          </View>
+          {view.viewMode === '3d' ? (
+            <Sky3D
+              stars={sky.drawStars}
+              track={track}
+              selectedId={selectedId}
+              onSelect={setSelectedId}
+            />
+          ) : (
           <StarChart
             stars={sky.drawStars}
             width={cw}
@@ -90,6 +105,7 @@ export default function Index() {
             selectedId={selectedId}
             onSelect={setSelectedId}
           />
+          )}
           <Text data-testid='summary'>Top {sky.stars.length} 颗 · LAST {Number.isNaN(sky.lstDeg) ? '--' : sky.lstDeg.toFixed(1)}°</Text>
         </>
       )}
