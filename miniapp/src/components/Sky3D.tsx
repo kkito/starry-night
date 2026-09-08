@@ -232,13 +232,17 @@ export function Sky3D({ stars, track, selectedId, onSelect }: Sky3DProps) {
     let cancelled = false;
     let cancelLoop: (() => void) | null = null;
     queryCanvasRect();
-    // H5 走 document canvas 分支（getGLCanvasNode 内处理），weapp 取离屏能力节点
+    // weapp：selectorQuery.node() 拿 Canvas 实例；H5：document canvas（getGLCanvasNode 内按 TARO_ENV 分流）。
+    // 注意：node 必须调 getContext('webgl') 拿 GL 上下文再传给 three——小程序 Canvas 节点本身
+    // 没有 getContext 直调 three 会报 t.getContext is not a function；也不要手动创建 WebGLRenderer
+    // 兜底（会走到浏览器 canvas，在小程序里无意义），失败直接 noGL。
     getGLCanvasNode(SKY3D_CANVAS_ID).then((node: any) => {
       if (cancelled) return;
       let renderer: THREE.WebGLRenderer;
       try {
-        const gl = node.getContext?.('webgl', { alpha: true }) ?? null;
-        renderer = gl ? new THREE.WebGLRenderer({ canvas: node }) : new THREE.WebGLRenderer({ antialias: true });
+        const gl = node.getContext?.('webgl', { alpha: true, antialias: true }) ?? null;
+        if (!gl) { setNoGL(true); return; }
+        renderer = new THREE.WebGLRenderer({ canvas: node, context: gl });
       } catch {
         setNoGL(true);
         return;

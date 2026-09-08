@@ -14,14 +14,19 @@ export function getViewport(): { width: number; height: number; pixelRatio: numb
 
 export type FrameCallback = (time: number) => void;
 
-/** 下一帧调度（H5 分支直通 rAF；WEAPP 无全局 rAF，用 16ms 定时兜底），返回 cancel 函数。 */
+/** 编译期环境（Taro DefinePlugin 在构建时替换为 'weapp'/'h5' 字面量）。
+ * 注意：不要用 `// #ifdef` 注释判端——实测 weapp 产物里 H5/WEAPP 双分支都被打进去了，ifdef 根本没剥离。
+ * 用函数每次读 env（而非模块顶层常量），单测可改 process.env.TARO_ENV 覆盖两分支。 */
+export function isWeapp(): boolean {
+  return process.env.TARO_ENV === 'weapp';
+}
+
+/** 下一帧调度（H5 直通 rAF；WEAPP 无全局 rAF，用 16ms 定时兜底），返回 cancel 函数。 */
 export function nextFrame(handle: FrameCallback): () => void {
-  // #ifdef H5
-  if (typeof requestAnimationFrame === 'function') {
+  if (!isWeapp() && typeof requestAnimationFrame === 'function') {
     const id = requestAnimationFrame(handle);
     return () => cancelAnimationFrame(id);
   }
-  // #endif
   const t = setTimeout(() => handle(Date.now()), 16);
   return () => clearTimeout(t);
 }
@@ -30,7 +35,7 @@ export function nextFrame(handle: FrameCallback): () => void {
  * 注意：不能用 `typeof document !== 'undefined'` 判端——Taro weapp 运行时也有 document
  * 垫片，但其 getElementById 返回的元素没有 getBoundingClientRect，会炸。必须按 TARO_ENV 判。 */
 export function getCanvasRect(canvasId: string): Promise<{ left: number; top: number }> {
-  if (process.env.TARO_ENV === 'weapp') {
+  if (isWeapp()) {
     return new Promise((resolve) => {
       try {
         Taro.createSelectorQuery()
@@ -50,29 +55,27 @@ export function getCanvasRect(canvasId: string): Promise<{ left: number; top: nu
   return Promise.resolve({ left: r?.left ?? 0, top: r?.top ?? 0 });
 }
 
-/** 取 <Canvas type="2d" id={canvasId}> 的离屏能力节点（真机 weapp 生效，H5 走 document canvas）。 */
+/** 取 <Canvas type="2d" id={canvasId}> 的绘制节点（weapp 走 selectorQuery.node()，H5 走 document）。 */
 export function getGLCanvasNode(canvasId: string): Promise<any> {
+  if (!isWeapp()) {
+    return new Promise((resolve, reject) => {
+      const el = document.getElementById(canvasId) as HTMLCanvasElement | null;
+      el ? resolve(el) : reject(new Error(`canvas #${canvasId} missing`));
+    });
+  }
   return new Promise((resolve, reject) => {
-    // #ifdef H5
-    const el = document.getElementById(canvasId) as HTMLCanvasElement | null;
-    el ? resolve(el) : reject(new Error(`canvas #${canvasId} missing`));
-    // #endif
-    // #ifdef WEAPP
     Taro.createSelectorQuery().select(`#${canvasId}`).node((res: any) => {
       res?.node ? resolve(res.node) : reject(new Error(`canvas #${canvasId} node missing`));
     }).exec();
-    // #endif
   });
 }
 
-/** 程序化纹理用的离屏 canvas（星点精灵/方位文字/渐变贴图 3 处共用）。 */
+/** 程序化纹理用的离屏 canvas（星点精灵/方位文字/渐变贴图共用）。 */
 export function makeOffscreen(width: number, height: number): any {
-  // #ifdef WEAPP
-  return Taro.createOffscreenCanvas({ type: '2d', width, height });
-  // #endif
-  // #ifdef H5
+  if (isWeapp()) {
+    return Taro.createOffscreenCanvas({ type: '2d', width, height });
+  }
   const c = document.createElement('canvas');
   c.width = width; c.height = height;
   return c;
-  // #endif
 }

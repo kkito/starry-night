@@ -15,7 +15,11 @@ const config: UserConfigExport<'webpack5'> = {
   sourceRoot: 'src',
   outputRoot: 'dist',
   plugins: [],
-  defineConstants: {},
+  defineConstants: {
+    // 关键：Taro 的 DefinePlugin 需要显式声明才会在构建时替换 process.env.TARO_ENV。
+    // 默认分支走 weapp，避免业务代码里的 isWeapp() 在 weapp 产物中误判为 H5。
+    'process.env.TARO_ENV': JSON.stringify(process.env.TARO_ENV ?? 'weapp'),
+  },
   copy: {
     patterns: [],
     options: {},

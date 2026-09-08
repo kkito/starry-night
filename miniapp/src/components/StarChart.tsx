@@ -106,7 +106,18 @@ export function StarChart({
     tryDrawWithRetry({
       canvasId: 'starchart',
       args: { width, height, stars, mirror, shape, track },
-      getNode: getGLCanvasNode,
+      // weapp 的 <Canvas type="2d"> 后备存储默认只有 300x150，不设 width/height 属性画出来会被裁/糊。
+      // 必须在取 ctx 前按逻辑像素设好（设 width 会重置 ctx 状态，所以顺序不能反）。
+      getNode: (id: string) =>
+        getGLCanvasNode(id).then((node: any) => {
+          try {
+            if (node && typeof node.width === 'number' && (node.width !== width || node.height !== height)) {
+              node.width = width;
+              node.height = height;
+            }
+          } catch { /* H5 普通 canvas 兜底：靠 React 属性，已够用 */ }
+          return node;
+        }),
       schedule: (fn) => { nextFrame(() => { if (!cancelled) fn(); }); },
       draw: drawSky,
       onOk: () => { if (!cancelled) setDrawError(null); },
