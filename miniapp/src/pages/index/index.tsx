@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { View, Text } from '@tarojs/components';
+import * as Taro from '@tarojs/taro';
+import { useDidShow } from '@tarojs/taro';
 import './index.scss';
 import { computeSky } from '../../../../src/core/sky';
 import { computeSolarBodies } from '../../../../src/core/ephemeris';
@@ -11,6 +13,9 @@ import { CANVAS_MARGIN } from '../../../../src/components/StarChart';
 import { toLocalInput, type ViewParams } from '../../../../src/components/SettingsDialog';
 import { StarChart } from '../../components/StarChart';
 import { Sky3D } from '../../components/Sky3D';
+import { ViewModeSwitch } from '../../components/ViewModeSwitch';
+import { StarTooltip } from '../../components/StarTooltip';
+import { SELECTED_KEY } from '../../lib/selected';
 import { getViewport } from '../../web-env';
 import { loadViewPrefs } from '../../adapters/prefs';
 
@@ -30,6 +35,14 @@ export default function Index() {
   }, [view.timeMode]);
   const activeDate = view.timeMode === 'live' ? toLocalInput(new Date(now)) : view.date;
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  // 子页面（设置/星表）返回时刷新：重载 prefs + 读取星表回选 id（见 table/index.tsx 注释）。
+  useDidShow(() => {
+    setView(loadViewPrefs(DEFAULT_VIEW));
+    try {
+      const id = Taro.getStorageSync(SELECTED_KEY);
+      if (typeof id === 'string' && id) setSelectedId(id);
+    } catch { /* 无回选 */ }
+  });
 
   const vp = getViewport();
   const cw = vp.width;
@@ -83,9 +96,10 @@ export default function Index() {
         <Text>错误：{sky.error}</Text>
       ) : (
         <>
-          <View data-testid='viewmode-switch'>
-            <Text data-testid='mode-2d' onClick={() => setView((v) => ({ ...v, viewMode: '2d' }))}>2D</Text>
-            <Text data-testid='mode-3d' onClick={() => setView((v) => ({ ...v, viewMode: '3d' }))}>3D</Text>
+          <ViewModeSwitch value={view.viewMode} onChange={(m) => setView((v) => ({ ...v, viewMode: m }))} />
+          <View style={{ display: 'flex', flexDirection: 'row', gap: 8 }}>
+            <Text data-testid='open-settings' onClick={() => Taro.navigateTo({ url: '/pages/settings/index' })}>设置</Text>
+            <Text data-testid='open-table' onClick={() => Taro.navigateTo({ url: '/pages/table/index' })}>星表</Text>
           </View>
           {view.viewMode === '3d' ? (
             <Sky3D
@@ -107,6 +121,14 @@ export default function Index() {
           />
           )}
           <Text data-testid='summary'>Top {sky.stars.length} 颗 · LAST {Number.isNaN(sky.lstDeg) ? '--' : sky.lstDeg.toFixed(1)}°</Text>
+          {(() => {
+            const sel = selectedId ? sky.drawStars.find((d) => d.id === selectedId) ?? null : null;
+            return sel ? (
+              <View style={{ position: 'relative' }}>
+                <StarTooltip star={sel} x={sel.x} y={sel.y} />
+              </View>
+            ) : null;
+          })()}
         </>
       )}
     </View>
