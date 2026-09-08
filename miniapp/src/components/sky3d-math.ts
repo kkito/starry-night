@@ -31,3 +31,12 @@ export function touchDist(touches: Array<{ clientX: number; clientY: number }>):
   if (!a || !b) return 0;
   return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
 }
+
+/** client 坐标换算为画布内坐标：减去画布 rect 偏移（画布上方切换条导致 y 系统性偏移）。 */
+export function toCanvasPoint(
+  clientX: number,
+  clientY: number,
+  rect: { left: number; top: number },
+): { x: number; y: number } {
+  return { x: clientX - rect.left, y: clientY - rect.top };
+}

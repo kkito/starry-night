@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 vi.mock('@tarojs/components', () => ({ Canvas: 'canvas', View: 'div', Text: 'span' }));
 vi.mock('@tarojs/taro', () => ({ createSelectorQuery: vi.fn() }));
 
-import { dragDeltaToYawPitch, pinchDistToFov, YAW_PER_PX, PITCH_PER_PX } from '../sky3d-math';
+import { dragDeltaToYawPitch, pinchDistToFov, toCanvasPoint, touchDist, YAW_PER_PX, PITCH_PER_PX } from '../sky3d-math';
 
 describe('Sky3D camera math (pure, testable part)', () => {
   it('drag right decreases yaw, drag down increases pitch (matches Web Sky3D factors)', () => {
@@ -30,5 +30,15 @@ describe('Sky3D camera math (pure, testable part)', () => {
 
   it('same pinch distance keeps fov', () => {
     expect(pinchDistToFov(65, 100, 100)).toBe(65);
+  });
+
+  it('touchDist returns hypot of two touch points', () => {
+    expect(touchDist([{ clientX: 0, clientY: 0 }, { clientX: 3, clientY: 4 }])).toBe(5);
+    expect(touchDist([{ clientX: 10, clientY: 10 }])).toBe(0);
+  });
+
+  it('toCanvasPoint subtracts rect offset (viewmode-switch strip compensation)', () => {
+    expect(toCanvasPoint(100, 200, { left: 0, top: 44 })).toEqual({ x: 100, y: 156 });
+    expect(toCanvasPoint(100, 200, { left: 10, top: 0 })).toEqual({ x: 90, y: 200 });
   });
 });

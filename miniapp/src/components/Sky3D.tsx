@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Canvas, View, Text } from '@tarojs/components';
+import * as Taro from '@tarojs/taro';
 import * as THREE from 'three';
 import { altAzToVec, DOME_R, pointSizeFor } from '../../../src/lib/dome';
 import type { DrawStar } from '../../../src/lib/drawlist';
@@ -9,6 +10,7 @@ import { clampPixelRatio, getGLCanvasNode, getViewport, makeOffscreen, nextFrame
 import {
   dragDeltaToYawPitch,
   pinchDistToFov,
+  toCanvasPoint,
   touchDist,
 } from './sky3d-math';
 
@@ -112,6 +114,36 @@ export function Sky3D({ stars, track, selectedId, onSelect }: Sky3DProps) {
     h: number;
   } | null>(null);
   const touchRef = useRef<{ lastX: number; lastY: number; pinchD: number; moved: boolean } | null>(null);
+  // 画布 rect 缓存：首帧获取后复用；上方有 viewmode-switch 切换条，裸 client 坐标有 y 系统性偏移。
+  const rectRef = useRef<{ left: number; top: number } | null>(null);
+
+  const queryCanvasRect = () => {
+    if (typeof document !== 'undefined') {
+      const r = document.getElementById(SKY3D_CANVAS_ID)?.getBoundingClientRect();
+      if (r) rectRef.current = { left: r.left, top: r.top };
+      return;
+    }
+    try {
+      Taro.createSelectorQuery()
+        .select(`#${SKY3D_CANVAS_ID}`)
+        .boundingClientRect((rect: any) => {
+          if (rect) rectRef.current = { left: rect.left ?? 0, top: rect.top ?? 0 };
+        })
+        .exec();
+    } catch {
+      console.warn('[Sky3D] canvas rect query failed, falling back to fullscreen assumption');
+    }
+  };
+
+  /** client 点换算为画布内点：有 rect 则减偏移，否则回退全屏假设。 */
+  const clientToCanvas = (clientX: number, clientY: number) => {
+    const r = rectRef.current;
+    if (!r) {
+      console.warn('[Sky3D] no canvas rect cached, falling back to fullscreen assumption');
+      return { x: clientX, y: clientY };
+    }
+    return toCanvasPoint(clientX, clientY, r);
+  };
 
   // 选中不碰视角：与 Web 版一致，点击只叠加轨迹+tooltip，相机 yaw/pitch 完全由用户拖拽决定。
   const applyCam = () => {
@@ -206,6 +238,7 @@ export function Sky3D({ stars, track, selectedId, onSelect }: Sky3DProps) {
   useEffect(() => {
     let cancelled = false;
     let cancelLoop: (() => void) | null = null;
+    queryCanvasRect();
     // H5 走 document canvas 分支（getGLCanvasNode 内处理），weapp 取离屏能力节点
     getGLCanvasNode(SKY3D_CANVAS_ID).then((node: any) => {
       if (cancelled) return;
@@ -416,8 +449,15 @@ export function Sky3D({ stars, track, selectedId, onSelect }: Sky3DProps) {
     if (!st || st.moved) return;
     const t = e?.changedTouches?.[0];
     if (!t) return;
-    // 全屏画布：client 坐标近似为画布内坐标（与 StarChart 的 boundingClientRect 换算等价在全屏假设下）
-    cbRef.current?.(pickAt(t.clientX, t.clientY));
+    const p = clientToCanvas(t.clientX, t.clientY);
+    cbRef.current?.(pickAt(p.x, p.y));
+  };
+
+  const onPickClick = (e: any) => {
+    const t = e?.changedTouches?.[0] ?? e;
+    if (t?.clientX == null || t?.clientY == null) return;
+    const p = clientToCanvas(t.clientX, t.clientY);
+    cbRef.current?.(pickAt(p.x, p.y));
   };
 
   const selectedStar = selectedId ? (stars.find((x) => x.id === selectedId) ?? null) : null;
@@ -444,6 +484,7 @@ export function Sky3D({ stars, track, selectedId, onSelect }: Sky3DProps) {
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
+        onClick={onPickClick}
       />
       {selectedStar && (
         <View data-testid='selected-tooltip' style={{ position: 'absolute', top: 12, left: 12 }}>
