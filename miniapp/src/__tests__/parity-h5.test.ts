@@ -5,8 +5,9 @@ import { loadSharedCatalog } from '../shared/catalog';
 
 /**
  * Task 8 M4 对齐：小程序侧经由共享 computeSky/loadSharedCatalog 算出的结果，
- * 与 Web 版真值 tests/golden/golden.json 同源（同地点时刻星数与首星 id 一致）。
- * 小程序不重实现算法，这里直接用与 miniapp 相同的共享入口做断言。
+ * 与 Web 版真值 tests/golden/golden.json 同源（单星位置见下“首星位置与 golden 真值一致”）。
+ * 注意：golden.json 只有单星期望位置，没有固定地点时刻的整天星数/首星期望值，
+ * 因此下面 fixedCases 仅为确定性自一致性（非真值对齐），标题不再声称双端对齐。
  */
 const golden = JSON.parse(
   readFileSync(new URL('../../../tests/golden/golden.json', import.meta.url), 'utf8'),
@@ -33,7 +34,7 @@ describe('parity miniapp vs web golden (computeSky)', () => {
   });
 
   for (const c of fixedCases) {
-    it(`computeSky(${c.lat},${c.lon},${c.iso}) 星数与首星稳定（双端同算法）`, () => {
+    it(`computeSky(${c.lat},${c.lon},${c.iso}) 确定性自一致性（非真值对齐）`, () => {
       const a = skyCountAndFirst(c.lat, c.lon, c.iso);
       const b = skyCountAndFirst(c.lat, c.lon, c.iso);
       expect(a.n).toBeGreaterThan(10);
