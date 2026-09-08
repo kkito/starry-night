@@ -1,0 +1,41 @@
+{
+  "name": "miniapp",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build:weapp": "taro build --type weapp",
+    "build:h5": "taro build --type h5"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "^11.7.0",
+      "onFail": "download"
+    }
+  },
+  "type": "module",
+  "devDependencies": {
+    "@tarojs/cli": "^3.6.40",
+    "babel-preset-taro": "^3.6.40",
+    "typescript": "^5.9.3",
+    "webpack": "5.78.0"
+  },
+  "dependencies": {
+    "@tarojs/components": "^3.6.40",
+    "@tarojs/helper": "^3.6.40",
+    "@tarojs/plugin-framework-react": "^3.6.40",
+    "@tarojs/plugin-platform-h5": "^3.6.40",
+    "@tarojs/plugin-platform-weapp": "^3.6.40",
+    "@tarojs/react": "^3.6.40",
+    "@tarojs/runtime": "^3.6.40",
+    "@tarojs/shared": "^3.6.40",
+    "@tarojs/taro": "^3.6.40",
+    "@tarojs/webpack5-runner": "^3.6.40",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  }
+}
