@@ -7,5 +7,5 @@
 - [ ] Points 星点/颜色/尺寸与 H5 一致
 - [ ] 方位文字 sprite 清晰
 - [ ] 单指拖拽旋转 / 双指 pinch 缩放
-- [ ] selectedId 变化相机 yaw 跟随
+- [ ] selectedId 变化只叠加轨迹+tooltip、视角不动（与 Web 版 822a66c 行为一致）
 - [ ] ±6h 轨迹 + 太阳系天体可见
