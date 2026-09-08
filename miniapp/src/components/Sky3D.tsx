@@ -232,12 +232,10 @@ export function Sky3D({ stars, track, selectedId, onSelect }: Sky3DProps) {
     let cancelled = false;
     let cancelLoop: (() => void) | null = null;
     queryCanvasRect();
-    // 官方文档：<Canvas type="webgl"> 经 query.node() 拿 canvas，再 getContext('webgl')。
-    // three 0.185 的 WebGLRenderer 内部只认 canvas.getContext('webgl2')，所以不要手动
-    // getContext 再传 context——小程序的 getContext 只认 'webgl'，'webgl2' 会报 Invalid context type。
-    // 正确姿势：把 node 直接当 canvas 传给 three，让 three 自己调 getContext。
-    // 注意：node 必须补 addEventListener/setAttribute 垫片（three 初始化时要调），
-    // 否则报 t.getContext is not a function 一类错。
+    // three 已降级到 0.158（见 miniapp/package.json）：最后一个带 webgl2→webgl 回退的版本，
+    // 小程序 getContext 只认 'webgl' 也能拿到上下文。把 node 直接当 canvas 传给 three，
+    // 让 three 自己按 ['webgl2','webgl','experimental-webgl'] 顺序回退。
+    // 注意：node 必须补 addEventListener/setAttribute 垫片（three 初始化时要调）。
     getGLCanvasNode(SKY3D_CANVAS_ID).then((node: any) => {
       if (cancelled) return;
       let renderer: THREE.WebGLRenderer;
