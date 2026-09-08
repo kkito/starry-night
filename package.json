@@ -8,6 +8,8 @@
     "test": "vitest run",
     "dev": "vite",
     "build": "vite build",
+    "miniapp:weapp": "pnpm --dir miniapp build:weapp",
+    "miniapp:h5": "pnpm --dir miniapp build:h5",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {

@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Canvas, View, Text } from '@tarojs/components';
-import * as Taro from '@tarojs/taro';
 // 直接只读引用 Web 版 drawSky 纯函数（Task 2 已验证 mini.webpackChain 可打包仓根外文件）。
 // 同步规则：drawSky 逻辑以仓根 src/components/StarChart.tsx 为准，此处不分叉复制；
 // 若 Web 版 SketchCtx/drawSky 签名变更，此处 import 会随类型检查失败而显式暴露。
 import { drawSky } from '../../../src/components/StarChart';
 import type { DrawStar } from '../../../src/lib/drawlist';
 import type { StarTrack } from '../../../src/lib/track';
-import { getGLCanvasNode, nextFrame } from '../web-env';
+import { getCanvasRect, getGLCanvasNode, nextFrame } from '../web-env';
 
 export const HIT_PX = 8;
 
@@ -128,18 +127,11 @@ export function StarChart({
   const handlePickEvent = (e: any) => {
     const p = extractClientPoint(e);
     if (!p) return;
-    if (typeof document !== 'undefined') {
-      const r = document.getElementById('starchart')?.getBoundingClientRect();
-      pick(p.x, p.y, r?.left ?? 0, r?.top ?? 0);
-      return;
-    }
-    Taro.createSelectorQuery()
-      .select('#starchart')
-      .boundingClientRect((rect: any) => {
-        if (!rect) return;
-        pick(p.x, p.y, rect.left ?? 0, rect.top ?? 0);
-      })
-      .exec();
+    // 判端走 web-env.getCanvasRect（按 TARO_ENV 判）：不能用 typeof document 判端，
+    // Taro weapp 运行时也有 document 垫片，其元素没有 getBoundingClientRect，会炸。
+    getCanvasRect('starchart').then((r) => {
+      pick(p.x, p.y, r.left, r.top);
+    });
   };
 
   const selected = selectedId ? (stars.find((x) => x.id === selectedId) ?? null) : null;

@@ -7,7 +7,7 @@ vi.mock('@tarojs/taro', () => ({
 }));
 
 import * as Taro from '@tarojs/taro';
-import { clampPixelRatio, getViewport, nextFrame } from '../web-env';
+import { clampPixelRatio, getCanvasRect, getViewport, nextFrame } from '../web-env';
 
 describe('web-env', () => {
   it('clamps pixelRatio to 2', () => {
@@ -33,6 +33,13 @@ describe('web-env', () => {
   it('viewport falls back to defaults', () => {
     vi.spyOn(Taro, 'getSystemInfoSync').mockReturnValue({} as any);
     expect(getViewport()).toEqual({ width: 375, height: 667, pixelRatio: 2 });
+  });
+  it('getCanvasRect falls back to zeros when selector query throws (weapp RED first)', async () => {
+    const origEnv = process.env.TARO_ENV;
+    process.env.TARO_ENV = 'weapp';
+    vi.spyOn(Taro, 'createSelectorQuery').mockImplementation(() => { throw new Error('no query'); });
+    await expect(getCanvasRect('starchart')).resolves.toEqual({ left: 0, top: 0 });
+    process.env.TARO_ENV = origEnv;
   });
   it('nextFrame fires handle and cancel stops it', async () => {
     let calls = 0;

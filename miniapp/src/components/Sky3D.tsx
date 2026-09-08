@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { Canvas, View, Text } from '@tarojs/components';
-import * as Taro from '@tarojs/taro';
 import * as THREE from 'three';
 import { altAzToVec, DOME_R, pointSizeFor } from '../../../src/lib/dome';
 import type { DrawStar } from '../../../src/lib/drawlist';
 import type { StarTrack } from '../../../src/lib/track';
 import { COLORS } from '../../../src/lib/tokens';
-import { clampPixelRatio, getGLCanvasNode, getViewport, makeOffscreen, nextFrame } from '../web-env';
+import { clampPixelRatio, getCanvasRect, getGLCanvasNode, getViewport, makeOffscreen, nextFrame } from '../web-env';
 import {
   dragDeltaToYawPitch,
   pinchDistToFov,
@@ -121,24 +120,12 @@ export function Sky3D({ stars, track, selectedId, onSelect }: Sky3DProps) {
   } | null>(null);
   const touchRef = useRef<{ lastX: number; lastY: number; pinchD: number; moved: boolean } | null>(null);
   // 画布 rect 缓存：首帧获取后复用；上方有 viewmode-switch 切换条，裸 client 坐标有 y 系统性偏移。
+  // 判端走 web-env.getCanvasRect（按 TARO_ENV 判）：不能用 typeof document 判端，
+  // Taro weapp 运行时也有 document 垫片，其元素没有 getBoundingClientRect，会炸。
   const rectRef = useRef<{ left: number; top: number } | null>(null);
 
   const queryCanvasRect = () => {
-    if (typeof document !== 'undefined') {
-      const r = document.getElementById(SKY3D_CANVAS_ID)?.getBoundingClientRect();
-      if (r) rectRef.current = { left: r.left, top: r.top };
-      return;
-    }
-    try {
-      Taro.createSelectorQuery()
-        .select(`#${SKY3D_CANVAS_ID}`)
-        .boundingClientRect((rect: any) => {
-          if (rect) rectRef.current = { left: rect.left ?? 0, top: rect.top ?? 0 };
-        })
-        .exec();
-    } catch {
-      console.warn('[Sky3D] canvas rect query failed, falling back to fullscreen assumption');
-    }
+    getCanvasRect(SKY3D_CANVAS_ID).then((r) => { rectRef.current = r; });
   };
 
   /** client 点换算为画布内点：有 rect 则减偏移，否则回退全屏假设。 */

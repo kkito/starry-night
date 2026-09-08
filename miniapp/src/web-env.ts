@@ -26,6 +26,30 @@ export function nextFrame(handle: FrameCallback): () => void {
   return () => clearTimeout(t);
 }
 
+/** 画布在视口中的偏移（点击换算用）。H5 走 document；weapp 必须走 selectorQuery。
+ * 注意：不能用 `typeof document !== 'undefined'` 判端——Taro weapp 运行时也有 document
+ * 垫片，但其 getElementById 返回的元素没有 getBoundingClientRect，会炸。必须按 TARO_ENV 判。 */
+export function getCanvasRect(canvasId: string): Promise<{ left: number; top: number }> {
+  if (process.env.TARO_ENV === 'weapp') {
+    return new Promise((resolve) => {
+      try {
+        Taro.createSelectorQuery()
+          .select(`#${canvasId}`)
+          .boundingClientRect((rect: any) => {
+            resolve({ left: rect?.left ?? 0, top: rect?.top ?? 0 });
+          })
+          .exec();
+      } catch {
+        resolve({ left: 0, top: 0 });
+      }
+    });
+  }
+  const r = typeof document !== 'undefined'
+    ? (document.getElementById(canvasId) as HTMLElement | null)?.getBoundingClientRect()
+    : undefined;
+  return Promise.resolve({ left: r?.left ?? 0, top: r?.top ?? 0 });
+}
+
 /** 取 <Canvas type="2d" id={canvasId}> 的离屏能力节点（真机 weapp 生效，H5 走 document canvas）。 */
 export function getGLCanvasNode(canvasId: string): Promise<any> {
   return new Promise((resolve, reject) => {
