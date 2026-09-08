@@ -43,6 +43,13 @@ const config: UserConfigExport<'webpack5'> = {
   h5: {
     publicPath: '/',
     staticDirectory: 'static',
+    webpackChain(chain) {
+      const rootSrc = path.resolve(__dirname, '..', '..', 'src');
+      chain.module
+        .rule('script')
+        .include.add(rootSrc)
+        .end();
+    },
     postcss: {
       autoprefixer: {
         enable: true,
