@@ -189,10 +189,11 @@ export function Sky3DWeapp({ stars, track, selectedId, onSelect }: WeappProps) {
         scene.add(dynamic);
         const raycaster = new THREE.Raycaster();
         raycaster.params.Points.threshold = 4;
+        const starTex = circleTexture(THREE);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(vp.width, vp.height);
         rtRef.current = {
-          THREE, camera, scene, dynamic, renderer, raycaster,
+          THREE, camera, scene, dynamic, renderer, raycaster, starTex,
           starPos: [] as unknown[], w: vp.width, h: vp.height, DOME_R,
         };
         applyCam();
@@ -267,7 +268,7 @@ export function Sky3DWeapp({ stars, track, selectedId, onSelect }: WeappProps) {
       const g = new THREE.BufferGeometry().setFromPoints(pts);
       g[setAttr(g)]('color', new THREE.Float32BufferAttribute(cols, 3));
       dynamic.add(new THREE.Points(g, new THREE.PointsMaterial({
-        size, sizeAttenuation: false, vertexColors: true,
+        map: rt.starTex, size, sizeAttenuation: false, vertexColors: true,
         transparent: true, opacity: 0.95, depthWrite: false,
       })));
     }
@@ -418,6 +419,23 @@ function silhouette(THREE: any, mesh: any): any {
   mesh.material.opacity = 0.45;
   mesh.material.depthWrite = false;
   return mesh;
+}
+
+/** 星点圆形纹理：PointsMaterial 默认是方块，用径向渐变贴图画成圆点（同 H5 版 circleTexture）。 */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function circleTexture(THREE: any): any {
+  const canvas = makeOffscreen(64, 64);
+  const ctx = canvas.getContext('2d');
+  const tex = new THREE.CanvasTexture(canvas);
+  if (!ctx) return tex;
+  const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+  g.addColorStop(0, 'rgba(255,255,255,1)');
+  g.addColorStop(0.5, 'rgba(255,255,255,1)');
+  g.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 64, 64);
+  tex.needsUpdate = true;
+  return tex;
 }
 
 /** 方位/仰角文字精灵：离屏 canvas 经 makeOffscreen 适配 weapp/H5；失败返回 null（跳过标注，不炸场景）。 */

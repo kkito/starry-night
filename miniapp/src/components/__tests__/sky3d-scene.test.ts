@@ -52,4 +52,9 @@ describe('sky3d-scene', () => {
     expect(src).toContain('directionLabel');
     expect(src).toContain('SILHOUETTE_GROUPS');
   });
+  it('adapter 星点是圆形：PointsMaterial 挂 circleTexture map（同 H5 版 buildStars）', () => {
+    const src = fs.readFileSync(path.resolve(__dirname, '../Sky3DAdapter.tsx'), 'utf8');
+    expect(src).toContain('circleTexture');
+    expect(src).toMatch(/map:\s*rt\.starTex/);
+  });
 });
