@@ -305,19 +305,24 @@ export function Sky3DWeapp({ stars, track, selectedId, onSelect }: WeappProps) {
     }
     // 选中标签：画在 three.js 场景里的 Sprite，跟星走（同 directionLabel 原理），
     // 彻底绕开原生 Canvas 盖不住普通 View 的层级问题。
+    // 内容对齐 H5 版 StarTooltip：星名/nameEn/mag/alt-az/distAu（太阳系天体）。
     const sel = selId ? (objs.find((s: DrawStar) => s.id === selId) ?? null) : null;
     if (sel) {
       const sv = altAzToVec(sel.az, sel.alt, DOME_R * 0.98);
-      const label = selectedStarLabel(THREE, sel.name ?? sel.id, `mag ${sel.mag.toFixed(2)}`);
+      const label = selectedStarLabel(THREE, sel);
       if (label) {
-        label.position.set(sv.x, sv.y + 14, sv.z);
+        // 标签 Sprite 默认中心定位：底边 = 中心 - 半高。按标签实际半高动态抬升，
+        // 底边浮在光晕（半高 14）之上再留 10 空隙——行数变化（nameEn/distAu 有无）不重叠。
+        const HALO_R = 14;
+        const GAP = 10;
+        label.position.set(sv.x, sv.y + label.scale.y / 2 + HALO_R + GAP, sv.z);
         dynamic.add(label);
         // 选中星描边：小光晕圆点，星群里一眼找到
         const halo = new THREE.Sprite(new THREE.SpriteMaterial({
           map: rt.starTex, color: new THREE.Color(COLORS.accent),
           transparent: true, opacity: 0.9, depthWrite: false, depthTest: false,
         }));
-        halo.scale.set(28, 28, 1);
+        halo.scale.set(HALO_R * 2, HALO_R * 2, 1);
         halo.position.set(sv.x, sv.y, sv.z);
         dynamic.add(halo);
       }
@@ -484,30 +489,39 @@ function circleTexture(THREE: any): any {
   return tex;
 }
 
-/** 选中星标签：两行文字 Sprite（星名 + mag），画在 three.js 场景里跟星走。
- * 同 directionLabel 原理：离屏 canvas 经 makeOffscreen 适配 weapp/H5；失败返回 null。 */
+/** 选中星标签：多行文字 Sprite（星名/nameEn/mag/alt-az/distAu），画在 three.js 场景里跟星走。
+ * 内容对齐 H5 版 StarTooltip；离屏 canvas 经 makeOffscreen 适配 weapp/H5；失败返回 null。 */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function selectedStarLabel(THREE: any, name: string, sub: string): any {
+function selectedStarLabel(THREE: any, star: DrawStar): any {
   try {
-    const canvas = makeOffscreen(256, 96);
+    const lines = [
+      { text: (star.name ?? star.id).slice(0, 8), color: '#e8ecf4', font: '600 30px system-ui, "PingFang SC", sans-serif' },
+      ...(star.nameEn ? [{ text: star.nameEn.slice(0, 14), color: '#8b93a7', font: '24px system-ui, sans-serif' }] : []),
+      { text: `mag ${star.mag.toFixed(2)}`, color: '#e8ecf4', font: '26px system-ui, sans-serif' },
+      { text: `alt ${star.alt.toFixed(1)}° / az ${star.az.toFixed(1)}°`, color: '#8b93a7', font: '24px system-ui, sans-serif' },
+      ...(star.distAu !== undefined ? [{ text: `dist ${star.distAu.toFixed(2)} AU`, color: '#8b93a7', font: '24px system-ui, sans-serif' }] : []),
+    ];
+    const W = 288;
+    const rowH = 36;
+    const H = lines.length * rowH + 24;
+    const canvas = makeOffscreen(W, H);
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
     ctx.fillStyle = 'rgba(20,27,46,0.92)';
-    ctx.fillRect(0, 0, 256, 96);
+    ctx.fillRect(0, 0, W, H);
     ctx.strokeStyle = '#ffd166';
     ctx.lineWidth = 3;
-    ctx.strokeRect(2, 2, 252, 92);
+    ctx.strokeRect(2, 2, W - 4, H - 4);
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillStyle = '#e8ecf4';
-    ctx.font = '600 34px system-ui, "PingFang SC", sans-serif';
-    ctx.fillText(name.slice(0, 8), 128, 30);
-    ctx.fillStyle = '#8b93a7';
-    ctx.font = '26px system-ui, "PingFang SC", sans-serif';
-    ctx.fillText(sub, 128, 68);
+    lines.forEach((l, i) => {
+      ctx.fillStyle = l.color;
+      ctx.font = l.font;
+      ctx.fillText(l.text, W / 2, 12 + rowH / 2 + i * rowH);
+    });
     const tex = new THREE.CanvasTexture(canvas);
     const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, depthTest: false }));
-    sp.scale.set(52, 19.5, 1);
+    sp.scale.set(58, (58 * H) / W, 1);
     return sp;
   } catch (e) {
     console.warn('[Sky3DWeapp] selectedStarLabel skipped:', e);

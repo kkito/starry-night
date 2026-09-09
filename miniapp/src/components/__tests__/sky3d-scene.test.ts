@@ -66,4 +66,14 @@ describe('sky3d-scene', () => {
     expect(src).toMatch(/dataRef\.current\s*=\s*\{\s*stars,\s*track,\s*selectedId/);
     expect(src).not.toContain('CoverView');
   });
+  it('选中标签内容与 H5 StarTooltip 对齐：nameEn/alt/az/distAu 都画进去', () => {
+    // H5 StarTooltip 有 5 行：星名/nameEn/mag/alt-az/distAu；Sprite 之前只画了星名+mag。
+    const src = fs.readFileSync(path.resolve(__dirname, '../Sky3DAdapter.tsx'), 'utf8');
+    expect(src).toContain('selectedStarLabel');
+    expect(src).toContain('nameEn');
+    expect(src).toContain('distAu');
+    // 位置：标签底边必须浮在光晕之上——按标签实际半高动态留空隙，
+    // 固定抬升（如 y+34）在 5 行标签时半高 20 + 光晕 14，底边只差 3 个单位必然重叠。
+    expect(src).toMatch(/label\.scale\.y\s*\/\s*2/);
+  });
 });
