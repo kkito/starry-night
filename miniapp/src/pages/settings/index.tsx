@@ -6,6 +6,7 @@ import { CITIES } from '../../../../src/lib/cities';
 import { pickCityCoords } from '../../lib/city-pick';
 import { getCurrentPosition } from '../../adapters/geolocation';
 import { loadViewPrefs, saveViewPrefs } from '../../adapters/prefs';
+import { FieldRow, Page, PageTitle, Section, errorTextStyle } from '../../components/ui';
 
 // 默认 viewMode 跟 Web 版一致为 '3d'（根 App.tsx DEFAULT_VIEW）。
 const DEFAULT_VIEW: ViewParams = { lat: 31.2304, lon: 121.4737, date: toLocalInput(new Date()), timeMode: 'live', topN: 50, aspect: 'auto', showSolar: true, mirror: false, shape: 'ellipse', viewMode: '3d' };
@@ -48,110 +49,117 @@ export default function Settings() {
   };
 
   return (
-    <View style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
-      <Text style={{ fontSize: 15, fontWeight: 600 }}>设置</Text>
-      <View>
-        <Text>城市</Text>
-        <Picker
-          mode='selector'
-          range={['手动输入', ...CITIES.map((c) => c.name)]}
-          value={city ? CITIES.findIndex((c) => c.name === city) + 1 : 0}
-          onChange={(e) => pickCity(Number(e.detail.value) === 0 ? '' : CITIES[Number(e.detail.value) - 1]!.name)}
-        >
-          <View data-testid='city'>{city || '手动输入'}</View>
-        </Picker>
-        <Button data-testid='locate' onClick={locate} disabled={locating}>
-          {locating ? '定位中…' : '定位当前'}
-        </Button>
-      </View>
-      <View>
-        <Text>纬度</Text>
-        <Input data-testid='lat' type='digit' value={String(view.lat)} onInput={(e) => { setCity(''); apply({ lat: Number(e.detail.value) }); }} />
-      </View>
-      <View>
-        <Text>经度</Text>
-        <Input data-testid='lon' type='digit' value={String(view.lon)} onInput={(e) => { setCity(''); apply({ lon: Number(e.detail.value) }); }} />
-      </View>
-      <View>
-        <Text>时间模式</Text>
-        <Picker
-          mode='selector'
-          range={['实时', '选定时间']}
-          value={view.timeMode === 'live' ? 0 : 1}
-          onChange={(e) => {
-            const live = Number(e.detail.value) === 0;
-            apply({ timeMode: live ? 'live' : 'fixed', ...(live ? { date: toLocalInput(new Date()) } : {}) });
-          }}
-        >
-          <View>{view.timeMode === 'live' ? '实时（跟随当前时间）' : '选定时间'}</View>
-        </Picker>
-      </View>
-      {view.timeMode === 'fixed' && (
-        <View>
-          <Text>选定时间（格式与 Web 版 SettingsDialog.toLocalInput 一致：YYYY-MM-DDTHH:mm）</Text>
+    <Page>
+      <PageTitle>设置</PageTitle>
+      <Section>
+        <FieldRow label='城市'>
           <Picker
-            mode='date'
-            value={view.date.slice(0, 10)}
-            onChange={(e) => apply({ date: `${String(e.detail.value)}T${view.date.slice(11, 16)}` })}
+            mode='selector'
+            range={['手动输入', ...CITIES.map((c) => c.name)]}
+            value={city ? CITIES.findIndex((c) => c.name === city) + 1 : 0}
+            onChange={(e) => pickCity(Number(e.detail.value) === 0 ? '' : CITIES[Number(e.detail.value) - 1]!.name)}
           >
-            <View data-testid='fixed-date'>日期：{view.date.slice(0, 10)}</View>
+            <View data-testid='city'>{city || '手动输入'}</View>
           </Picker>
+        </FieldRow>
+        <FieldRow label='定位'>
+          <Button data-testid='locate' size='mini' onClick={locate} disabled={locating}>
+            {locating ? '定位中…' : '定位当前'}
+          </Button>
+        </FieldRow>
+        <FieldRow label='纬度'>
+          <Input data-testid='lat' type='digit' value={String(view.lat)} onInput={(e) => { setCity(''); apply({ lat: Number(e.detail.value) }); }} />
+        </FieldRow>
+        <FieldRow label='经度'>
+          <Input data-testid='lon' type='digit' value={String(view.lon)} onInput={(e) => { setCity(''); apply({ lon: Number(e.detail.value) }); }} />
+        </FieldRow>
+      </Section>
+      <Section>
+        <FieldRow label='时间模式'>
           <Picker
-            mode='time'
-            value={view.date.slice(11, 16)}
-            onChange={(e) => apply({ date: `${view.date.slice(0, 10)}T${String(e.detail.value)}` })}
+            mode='selector'
+            range={['实时', '选定时间']}
+            value={view.timeMode === 'live' ? 0 : 1}
+            onChange={(e) => {
+              const live = Number(e.detail.value) === 0;
+              apply({ timeMode: live ? 'live' : 'fixed', ...(live ? { date: toLocalInput(new Date()) } : {}) });
+            }}
           >
-            <View data-testid='fixed-time'>时间：{view.date.slice(11, 16)}</View>
+            <View>{view.timeMode === 'live' ? '实时（跟随当前时间）' : '选定时间'}</View>
           </Picker>
+        </FieldRow>
+        {view.timeMode === 'fixed' && (
+          <>
+            <FieldRow label='日期'>
+              <Picker
+                mode='date'
+                value={view.date.slice(0, 10)}
+                onChange={(e) => apply({ date: `${String(e.detail.value)}T${view.date.slice(11, 16)}` })}
+              >
+                <View data-testid='fixed-date'>{view.date.slice(0, 10)}</View>
+              </Picker>
+            </FieldRow>
+            <FieldRow label='时间'>
+              <Picker
+                mode='time'
+                value={view.date.slice(11, 16)}
+                onChange={(e) => apply({ date: `${view.date.slice(0, 10)}T${String(e.detail.value)}` })}
+              >
+                <View data-testid='fixed-time'>{view.date.slice(11, 16)}</View>
+              </Picker>
+            </FieldRow>
+          </>
+        )}
+      </Section>
+      <Section>
+        <FieldRow label={`最亮 N 颗（${view.topN}）`}>
+          <Slider min={TOP_N_MIN} max={TOP_N_MAX} step={1} value={view.topN} onChange={(e) => apply({ topN: e.detail.value })} showValue />
+        </FieldRow>
+        <FieldRow label='显示比例'>
+          <Picker
+            mode='selector'
+            range={['自动', '横屏 16:9', '竖屏 9:16']}
+            value={['auto', 'landscape', 'portrait'].indexOf(view.aspect)}
+            onChange={(e) => apply({ aspect: (['auto', 'landscape', 'portrait'] as const)[Number(e.detail.value)]! })}
+          >
+            <View>{view.aspect}</View>
+          </Picker>
+        </FieldRow>
+        <FieldRow label='星图形状'>
+          <Picker
+            mode='selector'
+            range={['椭圆', '圆形']}
+            value={view.shape === 'ellipse' ? 0 : 1}
+            onChange={(e) => apply({ shape: Number(e.detail.value) === 0 ? 'ellipse' : 'circle' })}
+          >
+            <View>{view.shape}</View>
+          </Picker>
+        </FieldRow>
+        <FieldRow label='太阳系天体'>
+          <Switch data-testid='show-solar' checked={view.showSolar} onChange={(e) => apply({ showSolar: e.detail.value })} />
+        </FieldRow>
+        <FieldRow label='东西镜像'>
+          <Switch data-testid='mirror' checked={view.mirror} onChange={(e) => apply({ mirror: e.detail.value })} />
+        </FieldRow>
+        <FieldRow label='视图模式'>
+          <Picker
+            mode='selector'
+            range={['2D', '3D']}
+            value={view.viewMode === '2d' ? 0 : 1}
+            onChange={(e) => apply({ viewMode: Number(e.detail.value) === 0 ? '2d' : '3d' })}
+          >
+            <View>{view.viewMode.toUpperCase()}</View>
+          </Picker>
+        </FieldRow>
+      </Section>
+      {error && (
+        <View style={{ margin: '0 12px' }}>
+          <Text style={errorTextStyle}>{error}</Text>
         </View>
       )}
-      <View>
-        <Text>显示最亮的 N 颗（{view.topN}）</Text>
-        <Slider min={TOP_N_MIN} max={TOP_N_MAX} step={1} value={view.topN} onChange={(e) => apply({ topN: e.detail.value })} showValue />
+      <View style={{ margin: '12px' }}>
+        <Button onClick={() => Taro.navigateBack()}>返回星图</Button>
       </View>
-      <View>
-        <Text>显示比例</Text>
-        <Picker
-          mode='selector'
-          range={['自动', '横屏 16:9', '竖屏 9:16']}
-          value={['auto', 'landscape', 'portrait'].indexOf(view.aspect)}
-          onChange={(e) => apply({ aspect: (['auto', 'landscape', 'portrait'] as const)[Number(e.detail.value)]! })}
-        >
-          <View>{view.aspect}</View>
-        </Picker>
-      </View>
-      <View>
-        <Text>星图形状</Text>
-        <Picker
-          mode='selector'
-          range={['椭圆', '圆形']}
-          value={view.shape === 'ellipse' ? 0 : 1}
-          onChange={(e) => apply({ shape: Number(e.detail.value) === 0 ? 'ellipse' : 'circle' })}
-        >
-          <View>{view.shape}</View>
-        </Picker>
-      </View>
-      <View>
-        <Text>显示太阳系天体</Text>
-        <Switch data-testid='show-solar' checked={view.showSolar} onChange={(e) => apply({ showSolar: e.detail.value })} />
-      </View>
-      <View>
-        <Text>东西镜像（地图式：左西右东）</Text>
-        <Switch data-testid='mirror' checked={view.mirror} onChange={(e) => apply({ mirror: e.detail.value })} />
-      </View>
-      <View>
-        <Text>视图模式</Text>
-        <Picker
-          mode='selector'
-          range={['2D', '3D']}
-          value={view.viewMode === '2d' ? 0 : 1}
-          onChange={(e) => apply({ viewMode: Number(e.detail.value) === 0 ? '2d' : '3d' })}
-        >
-          <View>{view.viewMode.toUpperCase()}</View>
-        </Picker>
-      </View>
-      {error && <Text style={{ color: 'red' }}>{error}</Text>}
-      <Button onClick={() => Taro.navigateBack()}>返回星图</Button>
-    </View>
+    </Page>
   );
 }

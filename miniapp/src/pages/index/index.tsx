@@ -16,6 +16,7 @@ import { Sky3D } from '../../components/Sky3D';
 import { Sky3DWeapp } from '../../components/Sky3DAdapter';
 import { ViewModeSwitch } from '../../components/ViewModeSwitch';
 import { StarTooltip } from '../../components/StarTooltip';
+import { NavLink, Page, StatusBar, TopBar } from '../../components/ui';
 import { consumeSelectedId } from '../../lib/selected';
 import { canvasSize } from '../../lib/canvas-size';
 import { getViewport, isWeapp } from '../../web-env';
@@ -92,16 +93,24 @@ export default function Index() {
   }, [selectedId, view.lat, view.lon, view.mirror, activeDate, effRx, effRy]);
 
   return (
-    <View className='index'>
+    <Page>
       {sky.error ? (
         <Text>错误：{sky.error}</Text>
       ) : (
         <>
-          <ViewModeSwitch value={view.viewMode} onChange={(m) => setView((v) => { const next = { ...v, viewMode: m }; saveViewPrefs(next); return next; })} />
-          <View style={{ display: 'flex', flexDirection: 'row', gap: 8 }}>
-            <Text data-testid='open-settings' onClick={() => Taro.navigateTo({ url: '/pages/settings/index' })}>设置</Text>
-            <Text data-testid='open-table' onClick={() => Taro.navigateTo({ url: '/pages/table/index' })}>星表</Text>
+          <TopBar
+            title='星空'
+            right={(
+              <>
+                <NavLink testId='open-settings' onClick={() => Taro.navigateTo({ url: '/pages/settings/index' })}>设置</NavLink>
+                <NavLink testId='open-table' onClick={() => Taro.navigateTo({ url: '/pages/table/index' })}>星表</NavLink>
+              </>
+            )}
+          />
+          <View style={{ display: 'flex', flexDirection: 'row', justifyContent: 'center', padding: '6px 0' }}>
+            <ViewModeSwitch value={view.viewMode} onChange={(m) => setView((v) => { const next = { ...v, viewMode: m }; saveViewPrefs(next); return next; })} />
           </View>
+          <View style={{ position: 'relative' }}>
           {view.viewMode === '3d' ? (
             isWeapp() ? (
               <Sky3DWeapp
@@ -131,18 +140,20 @@ export default function Index() {
           />
           )}
           {/* 状态栏四格对齐 Web 版 App.tsx SummaryCell：坐标/时间/恒星时/可见星 */}
-          <Text data-testid='summary'>{Number(view.lat.toFixed(4))}° {Number(view.lon.toFixed(4))}° · {view.timeMode === 'live' ? `${activeDate}（实时）` : view.date} · LAST {Number.isNaN(sky.lstDeg) ? '--' : sky.lstDeg.toFixed(1)}° · Top {sky.stars.length} 颗</Text>
           {(() => {
             const sel = selectedId ? sky.drawStars.find((d) => d.id === selectedId) ?? null : null;
-            return sel ? (
-              <View style={{ position: 'relative' }}>
-                {/* DrawStar 的 x/y 是相对画布中心的偏移（见 drawSky: cx+s.x），此处照搬根 StarChart.tsx:241 传画布绝对坐标 */}
-                <StarTooltip star={sel} x={cw / 2 + sel.x} y={ch / 2 + sel.y} />
-              </View>
-            ) : null;
+            // tooltip 绝对定位，必须是星图容器的子节点才对得上坐标（DrawStar x/y 为画布中心偏移）。
+            return sel ? <StarTooltip star={sel} x={cw / 2 + sel.x} y={ch / 2 + sel.y} /> : null;
           })()}
+          </View>
+          <StatusBar
+            coords={`${Number(view.lat.toFixed(4))}° ${Number(view.lon.toFixed(4))}°`}
+            time={view.timeMode === 'live' ? `${activeDate}（实时）` : view.date}
+            lst={Number.isNaN(sky.lstDeg) ? '--' : `LAST ${sky.lstDeg.toFixed(1)}°`}
+            visible={`Top ${sky.stars.length} 颗`}
+          />
         </>
       )}
-    </View>
+    </Page>
   );
 }

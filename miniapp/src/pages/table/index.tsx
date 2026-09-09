@@ -7,6 +7,8 @@ import { computeSolarBodies } from '../../../../src/core/ephemeris';
 import { toLocalInput, type ViewParams } from '../../../../src/components/SettingsDialog';
 import { loadViewPrefs } from '../../adapters/prefs';
 import { SELECTED_KEY } from '../../lib/selected';
+import { Page, PageTitle, Section } from '../../components/ui';
+import { COLORS, FONTS } from '../../../../src/lib/tokens';
 
 // 默认 viewMode 跟 Web 版一致为 '3d'（根 App.tsx DEFAULT_VIEW）。
 const DEFAULT_VIEW: ViewParams = { lat: 31.2304, lon: 121.4737, date: toLocalInput(new Date()), timeMode: 'live', topN: 50, aspect: 'auto', showSolar: true, mirror: false, shape: 'ellipse', viewMode: '3d' };
@@ -34,24 +36,62 @@ export default function Table() {
   };
 
   return (
-    <View style={{ padding: 16 }}>
-      <Input data-testid='filter' placeholder='过滤星名' value={q} onInput={(e) => setQ(e.detail.value)} />
-      <View style={{ display: 'flex', flexDirection: 'row', gap: 8 }}>
-        <Text>名称</Text><Text>星等</Text><Text>高度</Text><Text>方位</Text>
+    <Page>
+      <PageTitle>星表</PageTitle>
+      <Section>
+        <View style={{ padding: '8px 0' }}>
+          <Input data-testid='filter' placeholder='过滤星名' value={q} onInput={(e) => setQ(e.detail.value)} />
+        </View>
+        <View style={{ display: 'flex', flexDirection: 'row', gap: 16, padding: '8px 0', color: COLORS.inkDim, fontSize: 12 }}>
+          <Text>名称</Text><Text>星等</Text><Text>高度</Text><Text>方位</Text>
+        </View>
+      </Section>
+      {solar.length > 0 && (
+        <Section>
+          <GroupTitle>太阳系</GroupTitle>
+          {solar.map((b) => (
+            <Row key={b.id} testId={`row-${b.id}`} onClick={() => pick(b.id)}>
+              <Text>{b.name}{b.nameEn ? ` ${b.nameEn}` : ''} {b.mag.toFixed(2)} {b.alt.toFixed(1)}°{belowHorizonNote(b.alt)} {b.az.toFixed(1)}°</Text>
+            </Row>
+          ))}
+        </Section>
+      )}
+      <Section>
+        {solar.length > 0 && <GroupTitle>恒星</GroupTitle>}
+        {shown.map((s) => (
+          <Row key={s.id} testId={`row-${s.id}`} onClick={() => pick(s.id)}>
+            <Text>{s.name ?? s.id}{s.nameEn ? ` ${s.nameEn}` : ''} {formatStarMag(s.mag)} {s.alt.toFixed(1)}°{belowHorizonNote(s.alt)} {s.az.toFixed(1)}°</Text>
+          </Row>
+        ))}
+      </Section>
+      <View style={{ margin: '12px' }}>
+        <Button onClick={() => Taro.navigateBack()}>关闭</Button>
       </View>
-      {solar.length > 0 && <Text>—— 太阳系 ——</Text>}
-      {solar.map((b) => (
-        <View key={b.id} data-testid={`row-${b.id}`} onClick={() => pick(b.id)}>
-          <Text>{b.name}{b.nameEn ? ` ${b.nameEn}` : ''} {b.mag.toFixed(2)} {b.alt.toFixed(1)}°{belowHorizonNote(b.alt)} {b.az.toFixed(1)}°</Text>
-        </View>
-      ))}
-      {solar.length > 0 && <Text>—— 恒星 ——</Text>}
-      {shown.map((s) => (
-        <View key={s.id} data-testid={`row-${s.id}`} onClick={() => pick(s.id)}>
-          <Text>{s.name ?? s.id}{s.nameEn ? ` ${s.nameEn}` : ''} {formatStarMag(s.mag)} {s.alt.toFixed(1)}°{belowHorizonNote(s.alt)} {s.az.toFixed(1)}°</Text>
-        </View>
-      ))}
-      <Button onClick={() => Taro.navigateBack()}>关闭</Button>
+    </Page>
+  );
+}
+
+function GroupTitle({ children }: { children: string }) {
+  return (
+    <View style={{ padding: '8px 0 4px', color: COLORS.inkDim, fontSize: 12 }}>
+      <Text>—— {children} ——</Text>
+    </View>
+  );
+}
+
+function Row({ testId, onClick, children }: { testId: string; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <View
+      data-testid={testId}
+      onClick={onClick}
+      style={{
+        padding: '10px 0',
+        borderBottom: `1px solid ${COLORS.line}`,
+        fontFamily: FONTS.mono,
+        fontSize: 13,
+      }}
+    >
+      {children}
     </View>
   );
 }
