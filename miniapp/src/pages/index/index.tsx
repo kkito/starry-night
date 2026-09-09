@@ -130,7 +130,8 @@ export default function Index() {
             onSelect={setSelectedId}
           />
           )}
-          <Text data-testid='summary'>Top {sky.stars.length} 颗 · LAST {Number.isNaN(sky.lstDeg) ? '--' : sky.lstDeg.toFixed(1)}°</Text>
+          {/* 状态栏四格对齐 Web 版 App.tsx SummaryCell：坐标/时间/恒星时/可见星 */}
+          <Text data-testid='summary'>{Number(view.lat.toFixed(4))}° {Number(view.lon.toFixed(4))}° · {view.timeMode === 'live' ? `${activeDate}（实时）` : view.date} · LAST {Number.isNaN(sky.lstDeg) ? '--' : sky.lstDeg.toFixed(1)}° · Top {sky.stars.length} 颗</Text>
           {(() => {
             const sel = selectedId ? sky.drawStars.find((d) => d.id === selectedId) ?? null : null;
             return sel ? (

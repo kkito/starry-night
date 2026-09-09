@@ -1,12 +1,16 @@
 // weapp 专用 3D 天穹：threejs-miniprogram（r108 UMD 外置 vendor），
 // 与 H5 版 Sky3D.tsx 同 props 接口，由调用方按 isWeapp() 二选一。
+// 场景与 H5 版对齐：天穹/辉光/地面 + 仰角圈/方位线/方位标注 + 剪影，
+// 动态层：按 pointSizeFor 分桶的星点 + 选中星过去实线/未来虚线轨迹。
 import { useEffect, useRef, useState } from 'react';
 import { Canvas, View, Text } from '@tarojs/components';
-import { getCanvasRect, getGLCanvasNode, getViewport } from '../web-env';
+import { getCanvasRect, getGLCanvasNode, getViewport, makeOffscreen } from '../web-env';
 import { dragDeltaToYawPitch, pinchDistToFov, toCanvasPoint, touchDist } from './sky3d-math';
 import type { DrawStar } from '../../../src/lib/drawlist';
 import type { StarTrack } from '../../../src/lib/track';
 import { COLORS } from '../../../src/lib/tokens';
+import { altAzToVec, pointSizeFor } from '../../../src/lib/dome';
+import { azLineEnds, ringPoints, splitTrackSegments } from './sky3d-scene';
 
 // adapter 是官方 threejs-miniprogram UMD 包：factory 头部直接写裸 exports 对象，
 // webpack 会把它与业务代码 scope-hoisting 内联进同一模块，import * 读出的命名空间
@@ -24,6 +28,16 @@ function loadAdapter(): { createScopedThreejs: (canvas: any) => any } {
 }
 
 export const SKY3D_WEAPP_CANVAS_ID = 'skycanvas-weapp';
+
+const ALT_RINGS = [10, 20, 30, 45, 60];
+const RING_COLOR = 0x44507a;
+const RING_OPACITY = [0.6, 0.5, 0.5, 0.4, 0.35];
+const SILHOUETTE_GROUPS = [
+  { treeAz: 20, bldAz: 43 },
+  { treeAz: 110, bldAz: 133 },
+  { treeAz: 200, bldAz: 223 },
+  { treeAz: 290, bldAz: 313 },
+];
 
 interface WeappProps {
   stars: DrawStar[];
@@ -54,7 +68,7 @@ export function Sky3DWeapp({ stars, track, selectedId, onSelect }: WeappProps) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const THREE: any = loadAdapter().createScopedThreejs(node);
         const vp = getViewport();
-        // 场景：天穹渐变球 + 辉光环 + 地面（同原生验证版最小亮机层）
+        // 场景：天穹渐变球 + 辉光环 + 地面（同 H5 版最小亮机层）
         const camera = new THREE.PerspectiveCamera(65, vp.width / vp.height, 0.1, 2000);
         camera.position.set(0, 2, 0);
         const scene = new THREE.Scene();
@@ -93,6 +107,83 @@ export function Sky3DWeapp({ stars, track, selectedId, onSelect }: WeappProps) {
         );
         ground.rotation.x = -Math.PI / 2;
         scene.add(ground);
+
+        // 仰角圈 + 仰角度数标注 + 方位线（同 H5 版）
+        ALT_RINGS.forEach((alt, i) => {
+          const pts = ringPoints(alt, DOME_R * 0.985).map((v) => new THREE.Vector3(v.x, v.y, v.z));
+          scene.add(new THREE.Line(
+            new THREE.BufferGeometry().setFromPoints(pts),
+            new THREE.LineBasicMaterial({ color: RING_COLOR, transparent: true, opacity: RING_OPACITY[i] ?? 0.5 }),
+          ));
+        });
+        for (const alt of ALT_RINGS) {
+          for (const az of [0, 90, 180, 270]) {
+            const v = altAzToVec(az, alt, DOME_R * 0.985);
+            const sp = directionLabel(THREE, `${alt}°`, '#8ea0c8');
+            if (!sp) continue;
+            sp.position.set(v.x, v.y + 2, v.z);
+            sp.scale.set(18, 9, 1);
+            scene.add(sp);
+          }
+        }
+        for (let az = 0; az < 360; az += 30) {
+          const [a, b] = azLineEnds(az, DOME_R * 0.985);
+          scene.add(new THREE.Line(
+            new THREE.BufferGeometry().setFromPoints([
+              new THREE.Vector3(a.x, a.y, a.z), new THREE.Vector3(b.x, b.y, b.z),
+            ]),
+            new THREE.LineBasicMaterial({ color: RING_COLOR, transparent: true, opacity: 0.35 }),
+          ));
+        }
+
+        // 剪影：每 90° 一组树 + 楼（共 4 组，半透明，同 H5 版）
+        {
+          const winPts: number[] = [];
+          for (const g of SILHOUETTE_GROUPS) {
+            const td = altAzToVec(g.treeAz, 0, DOME_R * 0.55);
+            const tree = new THREE.Group();
+            const trunk = silhouette(THREE, new THREE.Mesh(
+              new THREE.CylinderGeometry(1.2, 1.6, 10, 8),
+              new THREE.MeshBasicMaterial({ color: 0x060d0a }),
+            ));
+            trunk.position.y = 5;
+            const top = silhouette(THREE, new THREE.Mesh(
+              new THREE.ConeGeometry(9, 22, 10),
+              new THREE.MeshBasicMaterial({ color: 0x060d0a }),
+            ));
+            top.position.y = 20;
+            tree.add(trunk, top);
+            tree.position.set(td.x, 0, td.z);
+            scene.add(tree);
+
+            const bd = altAzToVec(g.bldAz, 0, DOME_R * 0.55);
+            const b = silhouette(THREE, new THREE.Mesh(
+              new THREE.BoxGeometry(22, 38, 10),
+              new THREE.MeshBasicMaterial({ color: 0x0a1024 }),
+            ));
+            b.position.set(bd.x, 19, bd.z);
+            b.lookAt(0, 19, 0);
+            b.updateMatrixWorld();
+            scene.add(b);
+            const lit: Array<[number, number]> = [[0, 3], [2, 2], [1, 1], [2, 0]];
+            for (const [cIdx, r] of lit) {
+              const off = new THREE.Vector3(-7 + cIdx * 7, 8 + r * 8, 5.2).applyQuaternion(b.quaternion);
+              winPts.push(bd.x + off.x, off.y, bd.z + off.z);
+            }
+          }
+          const winG = new THREE.BufferGeometry();
+          winG[setAttr(winG)]('position', new THREE.Float32BufferAttribute(winPts, 3));
+          scene.add(new THREE.Points(winG, new THREE.PointsMaterial({ color: 0xffdc78, size: 8, sizeAttenuation: false, transparent: true, opacity: 0.9, depthWrite: false })));
+        }
+
+        // 地平线方位标注：东/南/西/北
+        for (const [az, text] of [[0, '北'], [90, '东'], [180, '南'], [270, '西']] as const) {
+          const v = altAzToVec(az, 4, DOME_R * 0.97);
+          const sp = directionLabel(THREE, text, az === 90 ? '#e8b45a' : '#9aa5c4');
+          if (!sp) continue;
+          sp.position.set(v.x, v.y, v.z);
+          scene.add(sp);
+        }
 
         const dynamic = new THREE.Group();
         scene.add(dynamic);
@@ -150,31 +241,65 @@ export function Sky3DWeapp({ stars, track, selectedId, onSelect }: WeappProps) {
     if (!rt) return;
     const { THREE, dynamic } = rt;
     const DOME_R = rt.DOME_R as number;
-    while (dynamic.children.length) dynamic.remove(dynamic.children[0]);
+    while (dynamic.children.length) {
+      const o = dynamic.children[0];
+      dynamic.remove(o);
+      disposeObj(o);
+    }
     const { stars: objs, track: t } = dataRef.current;
+    // 星点：按 pointSizeFor(rPx) 分桶，同 H5 版 buildStars
     rt.starPos = objs.map((s: DrawStar) => {
-      const az = (s.az * Math.PI) / 180;
-      const alt = (s.alt * Math.PI) / 180;
-      const r = DOME_R * 0.98;
-      return new THREE.Vector3(
-        r * Math.cos(alt) * Math.sin(az),
-        r * Math.sin(alt),
-        -r * Math.cos(alt) * Math.cos(az),
-      );
+      const v = altAzToVec(s.az, s.alt, DOME_R * 0.98);
+      return new THREE.Vector3(v.x, v.y, v.z);
     });
+    const buckets = new Map<number, number[]>();
+    for (let i = 0; i < objs.length; i++) {
+      const size = pointSizeFor(objs[i]!.rPx);
+      let b = buckets.get(size);
+      if (!b) { b = []; buckets.set(size, b); }
+      b.push(i);
+    }
     const c = new THREE.Color();
-    const pts = rt.starPos as { x: number; y: number; z: number }[];
-    const cols: number[] = [];
-    objs.forEach((s: DrawStar) => { c.set(s.color); cols.push(c.r, c.g, c.b); });
-    const g = new THREE.BufferGeometry().setFromPoints(pts);
-    g[setAttr(g)]('color', new THREE.Float32BufferAttribute(cols, 3));
-    const size = 6;
-    dynamic.add(new THREE.Points(g, new THREE.PointsMaterial({
-      size, sizeAttenuation: false, vertexColors: true,
-      transparent: true, opacity: 0.95, depthWrite: false,
-    })));
-    void t;
-    void DOME_R;
+    for (const [size, idxs] of buckets) {
+      const pts = idxs.map((i) => rt.starPos[i]);
+      const cols: number[] = [];
+      for (const i of idxs) { c.set(objs[i]!.color); cols.push(c.r, c.g, c.b); }
+      const g = new THREE.BufferGeometry().setFromPoints(pts);
+      g[setAttr(g)]('color', new THREE.Float32BufferAttribute(cols, 3));
+      dynamic.add(new THREE.Points(g, new THREE.PointsMaterial({
+        size, sizeAttenuation: false, vertexColors: true,
+        transparent: true, opacity: 0.95, depthWrite: false,
+      })));
+    }
+    // 轨迹：过去实线 / 未来虚线，同 H5 版 buildTrack
+    const { past, future } = splitTrackSegments(t, DOME_R * 0.98);
+    if (past.length) {
+      const pts = past.flatMap((s) => [
+        new THREE.Vector3(s.a.x, s.a.y, s.a.z), new THREE.Vector3(s.b.x, s.b.y, s.b.z),
+      ]);
+      dynamic.add(new THREE.LineSegments(
+        new THREE.BufferGeometry().setFromPoints(pts),
+        new THREE.LineBasicMaterial({ color: new THREE.Color(COLORS.accent) }),
+      ));
+    }
+    if (future.length) {
+      const pts = future.flatMap((s) => [
+        new THREE.Vector3(s.a.x, s.a.y, s.a.z), new THREE.Vector3(s.b.x, s.b.y, s.b.z),
+      ]);
+      try {
+        const l = new THREE.LineSegments(
+          new THREE.BufferGeometry().setFromPoints(pts),
+          new THREE.LineDashedMaterial({ color: new THREE.Color(COLORS.accent), dashSize: 5, gapSize: 5 }),
+        );
+        l.computeLineDistances();
+        dynamic.add(l);
+      } catch {
+        dynamic.add(new THREE.LineSegments(
+          new THREE.BufferGeometry().setFromPoints(pts),
+          new THREE.LineBasicMaterial({ color: new THREE.Color(COLORS.accent) }),
+        ));
+      }
+    }
   };
 
   const clientToCanvas = (clientX: number, clientY: number) => {
@@ -280,4 +405,49 @@ export function Sky3DWeapp({ stars, track, selectedId, onSelect }: WeappProps) {
       )}
     </View>
   );
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function setAttr(g: any): string {
+  return typeof g.setAttribute === 'function' ? 'setAttribute' : 'addAttribute';
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function silhouette(THREE: any, mesh: any): any {
+  mesh.material.transparent = true;
+  mesh.material.opacity = 0.45;
+  mesh.material.depthWrite = false;
+  return mesh;
+}
+
+/** 方位/仰角文字精灵：离屏 canvas 经 makeOffscreen 适配 weapp/H5；失败返回 null（跳过标注，不炸场景）。 */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function directionLabel(THREE: any, text: string, color = '#e8b45a'): any {
+  try {
+    const canvas = makeOffscreen(128, 64);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    ctx.font = '40px system-ui, "PingFang SC", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = color;
+    ctx.fillText(text, 64, 34);
+    const tex = new THREE.CanvasTexture(canvas);
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, depthTest: false }));
+    sp.scale.set(36, 18, 1);
+    return sp;
+  } catch (e) {
+    console.warn('[Sky3DWeapp] directionLabel skipped:', e);
+    return null;
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function disposeObj(o: any): void {
+  o.traverse?.((child: any) => {
+    child.geometry?.dispose?.();
+    const m = child.material;
+    if (Array.isArray(m)) m.forEach((x) => { x.map?.dispose?.(); x.dispose?.(); });
+    else if (m) { m.map?.dispose?.(); m.dispose?.(); }
+  });
 }

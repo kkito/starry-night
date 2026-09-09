@@ -8,7 +8,8 @@ import { toLocalInput, type ViewParams } from '../../../../src/components/Settin
 import { loadViewPrefs } from '../../adapters/prefs';
 import { SELECTED_KEY } from '../../lib/selected';
 
-const DEFAULT_VIEW: ViewParams = { lat: 31.2304, lon: 121.4737, date: toLocalInput(new Date()), timeMode: 'live', topN: 50, aspect: 'auto', showSolar: true, mirror: false, shape: 'ellipse', viewMode: '2d' };
+// 默认 viewMode 跟 Web 版一致为 '3d'（根 App.tsx DEFAULT_VIEW）。
+const DEFAULT_VIEW: ViewParams = { lat: 31.2304, lon: 121.4737, date: toLocalInput(new Date()), timeMode: 'live', topN: 50, aspect: 'auto', showSolar: true, mirror: false, shape: 'ellipse', viewMode: '3d' };
 
 /**
  * 星表子页面：列/排序/过滤与 Web 版 StarTableDialog 一致（名称/星等/高度/方位，按星等升序，太阳系分组）。
