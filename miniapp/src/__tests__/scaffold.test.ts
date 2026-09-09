@@ -53,4 +53,11 @@ describe('taro scaffold', () => {
     expect(cfg).toContain('copy-vendor-weapp');
     expect(fs.existsSync(path.resolve(__dirname, '../../scripts/copy-vendor-weapp.mjs'))).toBe(true);
   });
+  it('weapp 构建链必拷 vendor：build:weapp 跑完 dist/pages/index 自带 threejs-miniprogram.js', () => {
+    // module 'pages/index/threejs-miniprogram.js' is not defined：
+    // build:weapp 若只跑 taro build 不拷 vendor，运行时 hidden require 必然炸。
+    // 锁死：package.json 的 build:weapp 必须链上 copy-vendor-weapp.mjs。
+    const pkg = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../package.json'), 'utf8'));
+    expect(pkg.scripts['build:weapp']).toContain('copy-vendor-weapp');
+  });
 });
