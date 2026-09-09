@@ -57,4 +57,13 @@ describe('sky3d-scene', () => {
     expect(src).toContain('circleTexture');
     expect(src).toMatch(/map:\s*rt\.starTex/);
   });
+  it('选中标签画在 three.js 场景里：rebuild 按 selectedId 挂 Sprite，不用 CoverView', () => {
+    // CoverView 盖 webgl canvas 定位/样式受限，标签跟星走必须进场景（同方位标注 directionLabel 原理）。
+    const src = fs.readFileSync(path.resolve(__dirname, '../Sky3DAdapter.tsx'), 'utf8');
+    expect(src).toContain('selectedStarLabel');
+    expect(src).toMatch(/selectedId/);
+    // dynamic 重建必须消费 selectedId，否则切星不换标签
+    expect(src).toMatch(/dataRef\.current\s*=\s*\{\s*stars,\s*track,\s*selectedId/);
+    expect(src).not.toContain('CoverView');
+  });
 });

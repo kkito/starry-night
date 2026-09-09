@@ -51,12 +51,14 @@ export function Sky3DWeapp({ stars, track, selectedId, onSelect }: WeappProps) {
   const [err, setErr] = useState<string | null>(null);
   const cbRef = useRef(onSelect);
   cbRef.current = onSelect;
-  const dataRef = useRef({ stars, track });
-  dataRef.current = { stars, track };
+  const dataRef = useRef({ stars, track, selectedId });
+  dataRef.current = { stars, track, selectedId };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const rtRef = useRef<any>(null);
   const touchRef = useRef<{ lastX: number; lastY: number; pinchD: number; moved: boolean } | null>(null);
   const rectRef = useRef<{ left: number; top: number } | null>(null);
+  // 最近一次 touchEnd 点选时间戳：防一次 tap 的 click 兜底把选中清掉。
+  const lastPickAtRef = useRef(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -219,7 +221,7 @@ export function Sky3DWeapp({ stars, track, selectedId, onSelect }: WeappProps) {
   useEffect(() => {
     rebuildScene();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stars, track]);
+  }, [stars, track, selectedId]);
 
   const applyCam = () => {
     const rt = rtRef.current;
@@ -247,7 +249,7 @@ export function Sky3DWeapp({ stars, track, selectedId, onSelect }: WeappProps) {
       dynamic.remove(o);
       disposeObj(o);
     }
-    const { stars: objs, track: t } = dataRef.current;
+    const { stars: objs, track: t, selectedId: selId } = dataRef.current;
     // 星点：按 pointSizeFor(rPx) 分桶，同 H5 版 buildStars
     rt.starPos = objs.map((s: DrawStar) => {
       const v = altAzToVec(s.az, s.alt, DOME_R * 0.98);
@@ -301,12 +303,44 @@ export function Sky3DWeapp({ stars, track, selectedId, onSelect }: WeappProps) {
         ));
       }
     }
+    // 选中标签：画在 three.js 场景里的 Sprite，跟星走（同 directionLabel 原理），
+    // 彻底绕开原生 Canvas 盖不住普通 View 的层级问题。
+    const sel = selId ? (objs.find((s: DrawStar) => s.id === selId) ?? null) : null;
+    if (sel) {
+      const sv = altAzToVec(sel.az, sel.alt, DOME_R * 0.98);
+      const label = selectedStarLabel(THREE, sel.name ?? sel.id, `mag ${sel.mag.toFixed(2)}`);
+      if (label) {
+        label.position.set(sv.x, sv.y + 14, sv.z);
+        dynamic.add(label);
+        // 选中星描边：小光晕圆点，星群里一眼找到
+        const halo = new THREE.Sprite(new THREE.SpriteMaterial({
+          map: rt.starTex, color: new THREE.Color(COLORS.accent),
+          transparent: true, opacity: 0.9, depthWrite: false, depthTest: false,
+        }));
+        halo.scale.set(28, 28, 1);
+        halo.position.set(sv.x, sv.y, sv.z);
+        dynamic.add(halo);
+      }
+    }
   };
 
   const clientToCanvas = (clientX: number, clientY: number) => {
     const r = rectRef.current;
     if (!r) return { x: clientX, y: clientY };
     return toCanvasPoint(clientX, clientY, r);
+  };
+
+  /** 统一取点：touch 数据优先（小程序 tap 带 changedTouches），H5 click 只有 clientX/Y 或 detail。
+   * 无数据返回 null。 */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const extractPoint = (e: any): { clientX: number; clientY: number } | null => {
+    const t = e?.changedTouches?.[0] ?? e?.touches?.[0] ?? e;
+    if (t == null || typeof t.clientX !== 'number' || typeof t.clientY !== 'number') {
+      const d = e?.detail;
+      if (d == null || typeof d.x !== 'number' || typeof d.y !== 'number') return null;
+      return { clientX: d.x, clientY: d.y };
+    }
+    return { clientX: t.clientX, clientY: t.clientY };
   };
 
   const pickAt = (x: number, y: number): string | null => {
@@ -367,8 +401,24 @@ export function Sky3DWeapp({ stars, track, selectedId, onSelect }: WeappProps) {
   const onTouchEnd = (e: any) => {
     const st = touchRef.current;
     touchRef.current = null;
-    if (!st || st.moved) return;
-    const t = e?.changedTouches?.[0];
+    // webgl Canvas 的 touchStart 可能没触发（touchRef 为空）：此时不能直接 return，
+    // 否则 tap 永不点选；只有明确发生过拖拽（moved）才跳过。
+    if (st?.moved) return;
+    const t = extractPoint(e);
+    if (!t) return;
+    const p = clientToCanvas(t.clientX, t.clientY);
+    lastPickAtRef.current = Date.now();
+    cbRef.current?.(pickAt(p.x, p.y));
+  };
+
+  // weapp 的 <Canvas type=webgl> 不触发 React 合成的 onTouchEnd（同 2D StarChart 补 onClick 兜底），
+  // click 兜底保证点选链路不断。注意：一次 tap 会同时触发 touchEnd + click，
+  // 若 click 用偏差坐标二次 pickAt 返回 null，会把 touchEnd 刚选中的星清掉（轨迹+弹窗一起消失）——
+  // 因此 touchEnd 刚处理过的 500ms 内忽略 click。
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const onPickClick = (e: any) => {
+    if (Date.now() - lastPickAtRef.current < 500) return;
+    const t = extractPoint(e);
     if (!t) return;
     const p = clientToCanvas(t.clientX, t.clientY);
     cbRef.current?.(pickAt(p.x, p.y));
@@ -398,12 +448,8 @@ export function Sky3DWeapp({ stars, track, selectedId, onSelect }: WeappProps) {
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
+        onClick={onPickClick}
       />
-      {selectedStar && (
-        <View data-testid='selected-tooltip' style={{ position: 'absolute', top: 12, left: 12 }}>
-          <Text>{selectedStar.name ?? selectedStar.id}</Text>
-        </View>
-      )}
     </View>
   );
 }
@@ -436,6 +482,37 @@ function circleTexture(THREE: any): any {
   ctx.fillRect(0, 0, 64, 64);
   tex.needsUpdate = true;
   return tex;
+}
+
+/** 选中星标签：两行文字 Sprite（星名 + mag），画在 three.js 场景里跟星走。
+ * 同 directionLabel 原理：离屏 canvas 经 makeOffscreen 适配 weapp/H5；失败返回 null。 */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function selectedStarLabel(THREE: any, name: string, sub: string): any {
+  try {
+    const canvas = makeOffscreen(256, 96);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    ctx.fillStyle = 'rgba(20,27,46,0.92)';
+    ctx.fillRect(0, 0, 256, 96);
+    ctx.strokeStyle = '#ffd166';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(2, 2, 252, 92);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#e8ecf4';
+    ctx.font = '600 34px system-ui, "PingFang SC", sans-serif';
+    ctx.fillText(name.slice(0, 8), 128, 30);
+    ctx.fillStyle = '#8b93a7';
+    ctx.font = '26px system-ui, "PingFang SC", sans-serif';
+    ctx.fillText(sub, 128, 68);
+    const tex = new THREE.CanvasTexture(canvas);
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, depthTest: false }));
+    sp.scale.set(52, 19.5, 1);
+    return sp;
+  } catch (e) {
+    console.warn('[Sky3DWeapp] selectedStarLabel skipped:', e);
+    return null;
+  }
 }
 
 /** 方位/仰角文字精灵：离屏 canvas 经 makeOffscreen 适配 weapp/H5；失败返回 null（跳过标注，不炸场景）。 */
