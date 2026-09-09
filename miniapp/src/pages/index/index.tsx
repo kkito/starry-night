@@ -13,11 +13,12 @@ import { CANVAS_MARGIN } from '../../../../src/components/StarChart';
 import { toLocalInput, type ViewParams } from '../../../../src/components/SettingsDialog';
 import { StarChart } from '../../components/StarChart';
 import { Sky3D } from '../../components/Sky3D';
+import { Sky3DWeapp } from '../../components/Sky3DAdapter';
 import { ViewModeSwitch } from '../../components/ViewModeSwitch';
 import { StarTooltip } from '../../components/StarTooltip';
 import { consumeSelectedId } from '../../lib/selected';
 import { canvasSize } from '../../lib/canvas-size';
-import { getViewport } from '../../web-env';
+import { getViewport, isWeapp } from '../../web-env';
 import { loadViewPrefs, saveViewPrefs } from '../../adapters/prefs';
 
 // 默认 viewMode 跟 Web 版一致为 '3d'（根 App.tsx DEFAULT_VIEW；低端机若卡顿可在设置页切回 2D）。
@@ -102,12 +103,21 @@ export default function Index() {
             <Text data-testid='open-table' onClick={() => Taro.navigateTo({ url: '/pages/table/index' })}>星表</Text>
           </View>
           {view.viewMode === '3d' ? (
-            <Sky3D
-              stars={sky.drawStars}
-              track={track}
-              selectedId={selectedId}
-              onSelect={setSelectedId}
-            />
+            isWeapp() ? (
+              <Sky3DWeapp
+                stars={sky.drawStars}
+                track={track}
+                selectedId={selectedId}
+                onSelect={setSelectedId}
+              />
+            ) : (
+              <Sky3D
+                stars={sky.drawStars}
+                track={track}
+                selectedId={selectedId}
+                onSelect={setSelectedId}
+              />
+            )
           ) : (
           <StarChart
             stars={sky.drawStars}

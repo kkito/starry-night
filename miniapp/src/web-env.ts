@@ -78,6 +78,27 @@ export function getGLCanvasNode(canvasId: string): Promise<any> {
   });
 }
 
+/** WebGL 画布节点垫片：小程序 getContext 对不支持的类型直接抛异常（而非按标准返回 null），
+ * three 按 ['webgl2','webgl',...] 顺序试探时第一步就炸，永远走不到 'webgl'。这里把抛异常包成返回 null，
+ * 让 three 的回退链能继续；同时补齐 three 初始化要调的 addEventListener/setAttribute。 */
+export function shimGLCanvas(node: any): any {
+  if (node && typeof node.getContext === 'function' && !(node as any).__glShimmed) {
+    const raw = node.getContext.bind(node);
+    node.getContext = (...args: any[]) => {
+      try {
+        return raw(...args);
+      } catch {
+        return null;
+      }
+    };
+    (node as any).__glShimmed = true;
+  }
+  if (node && typeof node.addEventListener !== 'function') node.addEventListener = () => {};
+  if (node && typeof node.removeEventListener !== 'function') node.removeEventListener = () => {};
+  if (node && typeof node.setAttribute !== 'function') node.setAttribute = () => {};
+  return node;
+}
+
 /** 程序化纹理用的离屏 canvas（星点精灵/方位文字/渐变贴图共用）。 */
 export function makeOffscreen(width: number, height: number): any {
   if (isWeapp()) {

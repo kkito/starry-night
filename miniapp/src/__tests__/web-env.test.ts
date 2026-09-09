@@ -9,7 +9,7 @@ vi.mock('@tarojs/taro', () => ({
 }));
 
 import * as Taro from '@tarojs/taro';
-import { clampPixelRatio, getCanvasRect, getViewport, nextFrame } from '../web-env';
+import { clampPixelRatio, getCanvasRect, getViewport, nextFrame, shimGLCanvas } from '../web-env';
 
 describe('web-env', () => {
   it('clamps pixelRatio to 2', () => {
@@ -42,6 +42,18 @@ describe('web-env', () => {
     vi.spyOn(Taro, 'createSelectorQuery').mockImplementation(() => { throw new Error('no query'); });
     await expect(getCanvasRect('starchart')).resolves.toEqual({ left: 0, top: 0 });
     process.env.TARO_ENV = origEnv;
+  });
+  it('shimGLCanvas swallows throwing getContext so three keeps trying webgl (RED)', () => {
+    const throwing = new Error("Invalid context type [webgl2] for Canvas#getContext");
+    const node: any = {
+      getContext: () => { throw throwing; },
+    };
+    shimGLCanvas(node);
+    expect(() => node.getContext('webgl2')).not.toThrow();
+    expect(node.getContext('webgl2')).toBeNull();
+    expect(typeof node.addEventListener).toBe('function');
+    expect(typeof node.removeEventListener).toBe('function');
+    expect(typeof node.setAttribute).toBe('function');
   });
   it('nextFrame fires handle and cancel stops it', async () => {
     let calls = 0;

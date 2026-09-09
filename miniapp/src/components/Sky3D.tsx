@@ -5,7 +5,7 @@ import { altAzToVec, DOME_R, pointSizeFor } from '../../../src/lib/dome';
 import type { DrawStar } from '../../../src/lib/drawlist';
 import type { StarTrack } from '../../../src/lib/track';
 import { COLORS } from '../../../src/lib/tokens';
-import { clampPixelRatio, getCanvasRect, getGLCanvasNode, getViewport, makeOffscreen, nextFrame } from '../web-env';
+import { clampPixelRatio, getCanvasRect, getGLCanvasNode, getViewport, makeOffscreen, nextFrame, shimGLCanvas } from '../web-env';
 import {
   dragDeltaToYawPitch,
   pinchDistToFov,
@@ -232,20 +232,18 @@ export function Sky3D({ stars, track, selectedId, onSelect }: Sky3DProps) {
     let cancelled = false;
     let cancelLoop: (() => void) | null = null;
     queryCanvasRect();
-    // three 已降级到 0.158（见 miniapp/package.json）：最后一个带 webgl2→webgl 回退的版本，
-    // 小程序 getContext 只认 'webgl' 也能拿到上下文。把 node 直接当 canvas 传给 three，
-    // 让 three 自己按 ['webgl2','webgl','experimental-webgl'] 顺序回退。
-    // 注意：node 必须补 addEventListener/setAttribute 垫片（three 初始化时要调）。
+    // three 已降级到 0.158（见 miniapp/package.json）：最后一个带 webgl2→webgl 回退的版本。
+    // 小程序 getContext 对不支持的类型直接抛异常（而非返回 null），three 一探 'webgl2' 就炸、
+    // 永远走不到 'webgl'——shimGLCanvas 把抛异常包成返回 null，让回退链继续。
     getGLCanvasNode(SKY3D_CANVAS_ID).then((node: any) => {
       if (cancelled) return;
       let renderer: THREE.WebGLRenderer;
       try {
         if (typeof node?.getContext !== 'function') { setNoGL(true); return; }
-        if (typeof node.addEventListener !== 'function') node.addEventListener = () => {};
-        if (typeof node.removeEventListener !== 'function') node.removeEventListener = () => {};
-        if (typeof node.setAttribute !== 'function') node.setAttribute = () => {};
+        shimGLCanvas(node);
         renderer = new THREE.WebGLRenderer({ canvas: node, antialias: true, alpha: true });
-      } catch {
+      } catch (err) {
+        console.error('[Sky3D] WebGLRenderer failed:', err);
         setNoGL(true);
         return;
       }

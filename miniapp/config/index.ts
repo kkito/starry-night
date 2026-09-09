@@ -21,6 +21,8 @@ const config: UserConfigExport<'webpack5'> = {
     'process.env.TARO_ENV': JSON.stringify(process.env.TARO_ENV ?? 'weapp'),
   },
   copy: {
+    // vendor 不走 copy 插件：to 相对项目根（实测拷到 miniapp/pages/），而运行时要的是
+    // dist/pages/index/。改由构建后脚本直拷（见 scripts/copy-vendor-weapp.mjs）。
     patterns: [],
     options: {},
   },
@@ -32,9 +34,16 @@ const config: UserConfigExport<'webpack5'> = {
   mini: {
     webpackChain(chain) {
       const rootSrc = path.resolve(__dirname, '..', '..', 'src');
+      const vendorDir = path.resolve(__dirname, '..', 'src', 'vendor');
       chain.module
         .rule('script')
         .include.add(rootSrc)
+        .end()
+        // vendor 是已打好的 ES5 包（threejs-miniprogram r108 UMD）：必须完全跳过 babel。
+        // 教训：只配 noParse 不够——babel-loader 照样给它注入 transform-runtime 的
+        // require(绝对路径…/helpers/typeof.js)，noParse 又让 webpack 不解析这个 require，
+        // 原样留到运行时，小程序里就报 module is not defined。exclude 让 babel 碰都不碰。
+        .exclude.add(vendorDir)
         .end();
     },
     postcss: {
