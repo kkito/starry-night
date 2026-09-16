@@ -15,7 +15,7 @@ describe('App', () => {
   it('默认视图渲染摘要与星图', () => {
     localStorage.clear();
     render(<App />);
-    expect(screen.getByTestId('skydome-fallback')).toBeTruthy();
+    expect(screen.getByTestId('skydome-html3d')).toBeTruthy();
     expect(screen.getByTestId('summary').textContent).toMatch(/可见星/);
   });
 
@@ -81,7 +81,7 @@ describe('App', () => {
   it('右上可切换 3D 视图', () => {
     localStorage.clear();
     render(<App />);
-    expect(screen.getByTestId('skydome-fallback')).toBeTruthy();
+    expect(screen.getByTestId('skydome-html3d')).toBeTruthy();
     fireEvent.click(screen.getByRole('switch', { name: '2D 视图' }));
     expect(screen.getByTestId('star-canvas')).toBeTruthy();
     fireEvent.click(screen.getByRole('switch', { name: '3D 视图' }));
