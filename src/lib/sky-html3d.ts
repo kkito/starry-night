@@ -3,7 +3,7 @@ import { altAzToVec } from './dome';
 
 export interface Html3DPoint { x: number; y: number; }
 
-/** 地平坐标 → canvas 像素坐标。相机位于原点，先绕 Y 转 -yaw 再绕 X 转 pitch（与 Sky3D 相机 lookAt 方向一致），透视除法落屏。z<=0（背后）返回 null。 */
+/** 地平坐标 → canvas 像素坐标。相机位于原点，先绕 Y 转 -yaw 再绕 X 转 pitch（与 Sky3D 相机 lookAt 方向一致），透视除法落屏。z2>=0（背后）返回 null。 */
 export function projectHtml3D(
   az: number, alt: number, yaw: number, pitch: number, fovDeg: number, w: number, h: number,
 ): Html3DPoint | null {
