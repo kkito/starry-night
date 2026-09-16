@@ -38,6 +38,35 @@ export function touchDist(touches: Array<{ clientX: number; clientY: number }>):
   return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
 }
 
+/** tap 判定位移上限（px）：触屏 tap 抖动常超 2px，2px 会把正常点按判成拖拽丢掉。 */
+export const TAP_SLOP_PX = 12;
+
+/** tap 判定：按下点到抬起点累计位移在容限内即算 tap。 */
+export function isTapGesture(dx: number, dy: number, slopPx = TAP_SLOP_PX): boolean {
+  return Math.abs(dx) + Math.abs(dy) <= slopPx;
+}
+
+/** 点选命中半径（屏幕 px）：手指落点误差 10~20px，老阈值 6 世界单位仅约 8px。 */
+export const PICK_PX_TOL = 22;
+
+/** 屏幕像素容差 → 射线距离世界单位：tol_world ≈ dist × 容差角（fov 按屏高折算）。 */
+export function pickToleranceWorld(tolPx: number, dist: number, screenH: number, fovDeg: number): number {
+  return dist * ((tolPx / screenH) * ((fovDeg * Math.PI) / 180));
+}
+
+/** 候选星取优：只要距射线最近且在容限内；forwardDot<=0（相机背后）不参选。 */
+export function pickBestStarIndex(dists: number[], forwardDots: number[], tol: number): number {
+  let best = -1;
+  let bestD = Infinity;
+  for (let i = 0; i < dists.length; i++) {
+    if ((forwardDots[i] ?? 0) <= 0) continue;
+    const d = dists[i]!;
+    if (d < bestD) { bestD = d; best = i; }
+  }
+  if (bestD > tol || best < 0) return -1;
+  return best;
+}
+
 /** client 坐标换算为画布内坐标：减去画布 rect 偏移（画布上方切换条导致 y 系统性偏移）。 */
 export function toCanvasPoint(
   clientX: number,

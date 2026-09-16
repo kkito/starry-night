@@ -5,7 +5,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Canvas, View, Text } from '@tarojs/components';
 import { getCanvasRect, getGLCanvasNode, getViewport, makeOffscreen } from '../web-env';
-import { dragDeltaToYawPitch, clampPitch, pinchDistToFov, toCanvasPoint, touchDist } from './sky3d-math';
+import { dragDeltaToYawPitch, clampPitch, pinchDistToFov, toCanvasPoint, touchDist, isTapGesture, PICK_PX_TOL, pickToleranceWorld, pickBestStarIndex } from './sky3d-math';
 import type { DrawStar } from '../../../src/lib/drawlist';
 import type { StarTrack } from '../../../src/lib/track';
 import { COLORS } from '../../../src/lib/tokens';
@@ -55,7 +55,7 @@ export function Sky3DWeapp({ stars, track, selectedId, onSelect }: WeappProps) {
   dataRef.current = { stars, track, selectedId };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const rtRef = useRef<any>(null);
-  const touchRef = useRef<{ lastX: number; lastY: number; pinchD: number; moved: boolean } | null>(null);
+  const touchRef = useRef<{ lastX: number; lastY: number; pinchD: number; moved: boolean; startX: number; startY: number } | null>(null);
   const rectRef = useRef<{ left: number; top: number } | null>(null);
   // 最近一次 touchEnd 点选时间戳：防一次 tap 的 click 兜底把选中清掉。
   const lastPickAtRef = useRef(0);
@@ -353,13 +353,23 @@ export function Sky3DWeapp({ stars, track, selectedId, onSelect }: WeappProps) {
     if (!rt) return null;
     const ndc = new rt.THREE.Vector2((x / rt.w) * 2 - 1, -(y / rt.h) * 2 + 1);
     rt.raycaster.setFromCamera(ndc, rt.camera);
-    let best = -1;
-    let bestD = Infinity;
+    const ray = rt.raycaster.ray;
+    const dir = ray.direction;
+    const dists: number[] = [];
+    const fwds: number[] = [];
+    let sumDist = 0;
     (rt.starPos as { distanceToPoint?: unknown }[]).forEach((p, i) => {
-      const d = rt.raycaster.ray.distanceToPoint(p);
-      if (d < bestD) { bestD = d; best = i; }
+      dists[i] = ray.distanceToPoint(p);
+      const v = (p as unknown as { x: number; y: number; z: number });
+      const toStar = { x: v.x - ray.origin.x, y: v.y - ray.origin.y, z: v.z - ray.origin.z };
+      const len = Math.hypot(toStar.x, toStar.y, toStar.z) || 1;
+      fwds[i] = (toStar.x * dir.x + toStar.y * dir.y + toStar.z * dir.z) / len;
+      sumDist += len;
     });
-    if (bestD >= 6 || best < 0) return null;
+    if (!dists.length) return null;
+    const tol = pickToleranceWorld(PICK_PX_TOL, sumDist / dists.length, rt.h, rt.camera.fov);
+    const best = pickBestStarIndex(dists, fwds, tol);
+    if (best < 0) return null;
     return dataRef.current.stars[best]?.id ?? null;
   };
 
@@ -372,6 +382,7 @@ export function Sky3DWeapp({ stars, track, selectedId, onSelect }: WeappProps) {
       lastX: t.clientX, lastY: t.clientY,
       pinchD: touches.length >= 2 ? touchDist([touches[0], touches[1]]) : 0,
       moved: false,
+      startX: t.clientX, startY: t.clientY,
     };
   };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -396,7 +407,8 @@ export function Sky3DWeapp({ stars, track, selectedId, onSelect }: WeappProps) {
     if (!t) return;
     const dx = t.clientX - st.lastX;
     const dy = t.clientY - st.lastY;
-    if (Math.abs(dx) + Math.abs(dy) > 2) st.moved = true;
+    // tap/drag 按起点累计位移判（触屏 tap 抖动常超 2px，逐帧 2px 会误杀正常点按）
+    if (!isTapGesture(t.clientX - st.startX, t.clientY - st.startY)) st.moved = true;
     const r = dragDeltaToYawPitch(dx, dy, camRef.current.yaw, camRef.current.pitch, rt.camera.fov);
     camRef.current.yaw = r.yaw;
     camRef.current.pitch = r.pitch;

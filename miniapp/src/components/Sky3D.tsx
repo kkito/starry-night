@@ -12,6 +12,10 @@ import {
   pinchDistToFov,
   toCanvasPoint,
   touchDist,
+  isTapGesture,
+  PICK_PX_TOL,
+  pickToleranceWorld,
+  pickBestStarIndex,
 } from './sky3d-math';
 
 export interface Sky3DProps {
@@ -119,7 +123,7 @@ export function Sky3D({ stars, track, selectedId, onSelect }: Sky3DProps) {
     w: number;
     h: number;
   } | null>(null);
-  const touchRef = useRef<{ lastX: number; lastY: number; pinchD: number; moved: boolean } | null>(null);
+  const touchRef = useRef<{ lastX: number; lastY: number; pinchD: number; moved: boolean; startX: number; startY: number } | null>(null);
   // 画布 rect 缓存：首帧获取后复用；上方有 viewmode-switch 切换条，裸 client 坐标有 y 系统性偏移。
   // 判端走 web-env.getCanvasRect（按 TARO_ENV 判）：不能用 typeof document 判端，
   // Taro weapp 运行时也有 document 垫片，其元素没有 getBoundingClientRect，会炸。
@@ -388,19 +392,31 @@ export function Sky3D({ stars, track, selectedId, onSelect }: Sky3DProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /** NDC 拾取：返回命中星星 id 或 null（tap 容差沿用 Web 版的 ray 距离 < 6）。 */
+  /** NDC 拾取：返回命中星星 id 或 null（容差按屏幕像素折算，背后星不参选）。 */
   const pickAt = (x: number, y: number): string | null => {
     const rt = rtRef.current;
     if (!rt) return null;
     const ndc = new THREE.Vector2((x / rt.w) * 2 - 1, -(y / rt.h) * 2 + 1);
     rt.raycaster.setFromCamera(ndc, rt.camera);
-    let best = -1;
-    let bestD = Infinity;
+    const ray = rt.raycaster.ray;
+    const dir = ray.direction;
+    const dists: number[] = [];
+    const fwds: number[] = [];
+    let sumDist = 0;
     for (let i = 0; i < rt.starPos.length; i++) {
-      const d = rt.raycaster.ray.distanceToPoint(rt.starPos[i]!);
-      if (d < bestD) { bestD = d; best = i; }
+      const p = rt.starPos[i]!;
+      dists[i] = ray.distanceToPoint(p);
+      const tx = p.x - ray.origin.x;
+      const ty = p.y - ray.origin.y;
+      const tz = p.z - ray.origin.z;
+      const len = Math.hypot(tx, ty, tz) || 1;
+      fwds[i] = (tx * dir.x + ty * dir.y + tz * dir.z) / len;
+      sumDist += len;
     }
-    if (bestD >= 6 || best < 0) return null;
+    if (!dists.length) return null;
+    const tol = pickToleranceWorld(PICK_PX_TOL, sumDist / dists.length, rt.h, rt.camera.fov);
+    const best = pickBestStarIndex(dists, fwds, tol);
+    if (best < 0) return null;
     return dataRef.current.stars[best]?.id ?? null;
   };
 
@@ -412,6 +428,7 @@ export function Sky3D({ stars, track, selectedId, onSelect }: Sky3DProps) {
       lastX: t.clientX, lastY: t.clientY,
       pinchD: touches.length >= 2 ? touchDist([touches[0], touches[1]]) : 0,
       moved: false,
+      startX: t.clientX, startY: t.clientY,
     };
   };
   const onTouchMove = (e: any) => {
@@ -436,7 +453,8 @@ export function Sky3D({ stars, track, selectedId, onSelect }: Sky3DProps) {
     if (!t) return;
     const dx = t.clientX - st.lastX;
     const dy = t.clientY - st.lastY;
-    if (Math.abs(t.clientX - st.lastX) + Math.abs(t.clientY - st.lastY) > 2) st.moved = true;
+    // tap/drag 按起点累计位移判（触屏 tap 抖动常超 2px，逐帧 2px 会误杀正常点按）
+    if (!isTapGesture(t.clientX - st.startX, t.clientY - st.startY)) st.moved = true;
     const r = dragDeltaToYawPitch(dx, dy, camRef.current.yaw, camRef.current.pitch, rt.camera.fov);
     camRef.current.yaw = r.yaw;
     camRef.current.pitch = r.pitch;
