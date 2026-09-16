@@ -5,7 +5,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Canvas, View, Text } from '@tarojs/components';
 import { getCanvasRect, getGLCanvasNode, getViewport, makeOffscreen } from '../web-env';
-import { dragDeltaToYawPitch, pinchDistToFov, toCanvasPoint, touchDist } from './sky3d-math';
+import { dragDeltaToYawPitch, clampPitch, pinchDistToFov, toCanvasPoint, touchDist } from './sky3d-math';
 import type { DrawStar } from '../../../src/lib/drawlist';
 import type { StarTrack } from '../../../src/lib/track';
 import { COLORS } from '../../../src/lib/tokens';
@@ -47,7 +47,7 @@ interface WeappProps {
 }
 
 export function Sky3DWeapp({ stars, track, selectedId, onSelect }: WeappProps) {
-  const camRef = useRef({ yaw: Math.PI, pitch: (25 * Math.PI) / 180 });
+  const camRef = useRef({ yaw: Math.PI, pitch: clampPitch((25 * Math.PI) / 180) });
   const [err, setErr] = useState<string | null>(null);
   const cbRef = useRef(onSelect);
   cbRef.current = onSelect;
@@ -385,6 +385,8 @@ export function Sky3DWeapp({ stars, track, selectedId, onSelect }: WeappProps) {
       if (st.pinchD > 0) {
         rt.camera.fov = pinchDistToFov(rt.camera.fov, st.pinchD, d);
         rt.camera.updateProjectionMatrix();
+        camRef.current.pitch = clampPitch(camRef.current.pitch, rt.camera.fov);
+        applyCam();
       }
       st.pinchD = d;
       st.moved = true;
@@ -395,7 +397,7 @@ export function Sky3DWeapp({ stars, track, selectedId, onSelect }: WeappProps) {
     const dx = t.clientX - st.lastX;
     const dy = t.clientY - st.lastY;
     if (Math.abs(dx) + Math.abs(dy) > 2) st.moved = true;
-    const r = dragDeltaToYawPitch(dx, dy, camRef.current.yaw, camRef.current.pitch);
+    const r = dragDeltaToYawPitch(dx, dy, camRef.current.yaw, camRef.current.pitch, rt.camera.fov);
     camRef.current.yaw = r.yaw;
     camRef.current.pitch = r.pitch;
     st.lastX = t.clientX;

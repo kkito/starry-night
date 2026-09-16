@@ -7,17 +7,18 @@ import { dragDeltaToYawPitch, pinchDistToFov, toCanvasPoint, touchDist, YAW_PER_
 
 describe('Sky3D camera math (pure, testable part)', () => {
   it('drag right decreases yaw, drag down increases pitch (matches Web Sky3D factors)', () => {
-    const start = { yaw: Math.PI, pitch: 0.4 };
+    const start = { yaw: Math.PI, pitch: 0.6 };
     const r = dragDeltaToYawPitch(100, 50, start.yaw, start.pitch);
     expect(YAW_PER_PX).toBe(0.003);
     expect(PITCH_PER_PX).toBe(0.002);
     expect(r.yaw).toBeCloseTo(Math.PI - 100 * 0.003, 10);
-    expect(r.pitch).toBeCloseTo(0.4 + 50 * 0.002, 10);
+    expect(r.pitch).toBeCloseTo(0.6 + 50 * 0.002, 10);
   });
 
-  it('pitch clamps to [-0.05, 1.2] (Web Sky3D bounds)', () => {
+  it('pitch clamps to [0.9*halfFov, 1.2]（地平线下最多留 5%）', () => {
     expect(dragDeltaToYawPitch(0, 10000, 0, 0.5).pitch).toBe(1.2);
-    expect(dragDeltaToYawPitch(0, -10000, 0, 0.5).pitch).toBe(-0.05);
+    // fov 65° 下限 ≈ 0.51，不再是 -0.05
+    expect(dragDeltaToYawPitch(0, -10000, 0, 0.5).pitch).toBeCloseTo(0.9 * ((65 * Math.PI) / 180 / 2), 6);
   });
 
   it('pinch out (spread) narrows fov, pinch in widens, clamped to [30, 100]', () => {

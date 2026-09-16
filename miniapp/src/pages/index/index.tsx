@@ -27,6 +27,14 @@ const DEFAULT_VIEW: ViewParams = { lat: 31.2304, lon: 121.4737, date: toLocalInp
 
 export const VIEW_MODES = ['2d', '3d'] as const;
 
+function formatLat(n: number): string {
+  return `${Math.abs(Number(n.toFixed(4)))}°${n < 0 ? 'S' : 'N'}`;
+}
+
+function formatLon(n: number): string {
+  return `${Math.abs(Number(n.toFixed(4)))}°${n < 0 ? 'W' : 'E'}`;
+}
+
 export default function Index() {
   const [view, setView] = useState<ViewParams>(() => loadViewPrefs(DEFAULT_VIEW));
   // 实时模式的心跳：每 5 分钟更新一次（承接 Web 版 App.tsx 状态模型）
@@ -99,18 +107,18 @@ export default function Index() {
       ) : (
         <>
           <TopBar
-            title='星空'
-            right={(
+            testId='topbar'
+            left={(
               <>
                 <NavLink testId='open-settings' onClick={() => Taro.navigateTo({ url: '/pages/settings/index' })}>设置</NavLink>
                 <NavLink testId='open-table' onClick={() => Taro.navigateTo({ url: '/pages/table/index' })}>星表</NavLink>
               </>
             )}
+            right={(
+              <ViewModeSwitch value={view.viewMode} onChange={(m) => setView((v) => { const next = { ...v, viewMode: m }; saveViewPrefs(next); return next; })} />
+            )}
           />
-          <View style={{ display: 'flex', flexDirection: 'row', justifyContent: 'center', padding: '6px 0' }}>
-            <ViewModeSwitch value={view.viewMode} onChange={(m) => setView((v) => { const next = { ...v, viewMode: m }; saveViewPrefs(next); return next; })} />
-          </View>
-          <View style={{ position: 'relative' }}>
+          <View data-testid='viewport' style={{ position: 'relative', overflow: 'hidden', minHeight: 0, flex: '1 1 auto', display: 'flex', flexDirection: 'column', alignItems: 'stretch', justifyContent: 'center' }}>
           {view.viewMode === '3d' ? (
             isWeapp() ? (
               <Sky3DWeapp
@@ -146,8 +154,9 @@ export default function Index() {
             return sel ? <StarTooltip star={sel} x={cw / 2 + sel.x} y={ch / 2 + sel.y} /> : null;
           })()}
           </View>
+          {/* 状态栏四格：坐标用 N/S/E/W（如 31.2304°N 121.4737°E），对齐 Web 版 SummaryCell */}
           <StatusBar
-            coords={`${Number(view.lat.toFixed(4))}° ${Number(view.lon.toFixed(4))}°`}
+            coords={`${formatLat(view.lat)} ${formatLon(view.lon)}`}
             time={view.timeMode === 'live' ? `${activeDate}（实时）` : view.date}
             lst={Number.isNaN(sky.lstDeg) ? '--' : `LAST ${sky.lstDeg.toFixed(1)}°`}
             visible={`Top ${sky.stars.length} 颗`}

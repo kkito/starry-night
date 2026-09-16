@@ -7,6 +7,7 @@ import type { StarTrack } from '../../../src/lib/track';
 import { COLORS } from '../../../src/lib/tokens';
 import { clampPixelRatio, getCanvasRect, getGLCanvasNode, getViewport, makeOffscreen, nextFrame, shimGLCanvas } from '../web-env';
 import {
+  clampPitch,
   dragDeltaToYawPitch,
   pinchDistToFov,
   toCanvasPoint,
@@ -97,7 +98,7 @@ const disposeObj = (o: THREE.Object3D) => {
 };
 
 export function Sky3D({ stars, track, selectedId, onSelect }: Sky3DProps) {
-  const camRef = useRef({ yaw: (180 * Math.PI) / 180, pitch: (25 * Math.PI) / 180 });
+  const camRef = useRef({ yaw: (180 * Math.PI) / 180, pitch: clampPitch((25 * Math.PI) / 180) });
   const [noGL, setNoGL] = useState(false);
   const cbRef = useRef(onSelect);
   cbRef.current = onSelect;
@@ -423,6 +424,9 @@ export function Sky3D({ stars, track, selectedId, onSelect }: Sky3DProps) {
       if (st.pinchD > 0) {
         rt.camera.fov = pinchDistToFov(rt.camera.fov, st.pinchD, d);
         rt.camera.updateProjectionMatrix();
+        // fov 变化后半视场角变化，重新钳制 pitch，避免拉出地平线下大片区域
+        camRef.current.pitch = clampPitch(camRef.current.pitch, rt.camera.fov);
+        applyCam();
       }
       st.pinchD = d;
       st.moved = true;
@@ -433,7 +437,7 @@ export function Sky3D({ stars, track, selectedId, onSelect }: Sky3DProps) {
     const dx = t.clientX - st.lastX;
     const dy = t.clientY - st.lastY;
     if (Math.abs(t.clientX - st.lastX) + Math.abs(t.clientY - st.lastY) > 2) st.moved = true;
-    const r = dragDeltaToYawPitch(dx, dy, camRef.current.yaw, camRef.current.pitch);
+    const r = dragDeltaToYawPitch(dx, dy, camRef.current.yaw, camRef.current.pitch, rt.camera.fov);
     camRef.current.yaw = r.yaw;
     camRef.current.pitch = r.pitch;
     st.lastX = t.clientX;

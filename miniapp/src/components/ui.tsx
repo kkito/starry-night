@@ -8,6 +8,8 @@ import { COLORS, FONTS } from '../../../src/lib/tokens';
 
 export const pageStyle = {
   minHeight: '100vh',
+  display: 'flex',
+  flexDirection: 'column',
   background: COLORS.sky,
   color: COLORS.ink,
   fontFamily: FONTS.ui,
@@ -68,22 +70,26 @@ export function FieldRow({ label, children }: { label: string; children: ReactNo
   );
 }
 
-/** 顶部导航条：标题 + 右侧操作区（主页的设置/星表入口收拢于此）。 */
-export function TopBar({ title, right }: { title: string; right?: ReactNode }) {
+/** 顶部导航条：单行不换行，左侧入口（设置/星表）+ 右侧操作区（2D/3D 开关）。 */
+export function TopBar({ left, right, testId }: { left?: ReactNode; right?: ReactNode; testId?: string }) {
   return (
     <View
+      data-testid={testId}
       style={{
         display: 'flex',
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '10px 12px',
+        flexWrap: 'nowrap',
+        minHeight: 48,
+        padding: '6px 10px',
+        gap: 8,
         borderBottom: `1px solid ${COLORS.line}`,
         background: COLORS.panel,
       }}
     >
-      <Text style={{ fontSize: 16, fontWeight: 700, color: COLORS.ink }}>{title}</Text>
-      <View style={{ display: 'flex', flexDirection: 'row', gap: 8 }}>{right}</View>
+      <View style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 8 }}>{left}</View>
+      <View style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', marginLeft: 'auto' }}>{right}</View>
     </View>
   );
 }
@@ -113,7 +119,7 @@ export function NavLink({
   );
 }
 
-/** 底部状态栏：对齐 Web 版 App.tsx SummaryCell 四格（坐标/时间/恒星时/可见星）。 */
+/** 底部状态栏：吸底 sticky，对齐 Web 版 SummaryCell 四格（坐标/时间/恒星时/可见星），读数基线对齐 + 等宽数字。 */
 export function StatusBar({
   coords,
   time,
@@ -129,17 +135,22 @@ export function StatusBar({
     <View
       data-testid='summary'
       style={{
+        position: 'sticky',
+        bottom: 0,
         display: 'flex',
         flexDirection: 'row',
-        alignItems: 'center',
+        alignItems: 'baseline',
         justifyContent: 'center',
-        gap: 16,
+        flexWrap: 'wrap',
+        rowGap: 2,
         background: 'rgba(13,18,32,.92)',
         borderTop: `1px solid ${COLORS.line}`,
-        padding: '8px 10px',
+        padding: '6px 10px',
+        minHeight: 36,
+        lineHeight: 1.6,
       }}
     >
-      <StatusCell label='坐标' value={coords} />
+      <StatusCell label='坐标' value={coords} first />
       <StatusCell label='时间' value={time} />
       {/* LAST 前缀与 Web 版 Readout value={`LAST ${sky.lstDeg.toFixed(1)}°`} 对齐，由调用方传入 */}
       <StatusCell label='恒星时' value={lst} />
@@ -149,11 +160,21 @@ export function StatusBar({
   );
 }
 
-function StatusCell({ label, value }: { label: string; value: string }) {
+function StatusCell({ label, value, first = false }: { label: string; value: string; first?: boolean }) {
   return (
-    <View style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-      <Text style={{ color: COLORS.inkDim, fontSize: 10 }}>{label}</Text>
-      <Text style={{ fontFamily: FONTS.mono, color: COLORS.ink, fontSize: 11 }}>{value}</Text>
+    <View
+      style={{
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'baseline',
+        gap: 6,
+        padding: '0 12px',
+        borderLeft: first ? 'none' : `1px solid ${COLORS.line}`,
+        whiteSpace: 'nowrap',
+      }}
+    >
+      <Text style={{ color: COLORS.inkDim, fontSize: 11 }}>{label}</Text>
+      <Text style={{ fontFamily: FONTS.mono, color: COLORS.ink, fontSize: 12, fontVariantNumeric: 'tabular-nums' }}>{value}</Text>
     </View>
   );
 }

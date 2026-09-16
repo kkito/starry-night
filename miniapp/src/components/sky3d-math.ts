@@ -9,15 +9,21 @@ export const PITCH_PER_PX = 0.002;
 export const PITCH_MIN = -0.05;
 export const PITCH_MAX = 1.2;
 
+/** 地平线下最多留 5%：pitch 下限为 0.9 倍半视场角（fov 度）。 */
+export function clampPitch(pitch: number, fovDeg = 65): number {
+  const min = 0.9 * ((fovDeg * Math.PI) / 180 / 2);
+  return Math.max(min, Math.min(PITCH_MAX, pitch));
+}
+
 /** 双指 pinch 的 fov 换算系数与夹紧范围（Web 版 wheel 系数 0.02 按触屏放大取 0.05）。 */
 export const FOV_PER_PX = 0.05;
 export const FOV_MIN = 30;
 export const FOV_MAX = 100;
 
-export function dragDeltaToYawPitch(dx: number, dy: number, yaw: number, pitch: number): { yaw: number; pitch: number } {
+export function dragDeltaToYawPitch(dx: number, dy: number, yaw: number, pitch: number, fovDeg = 65): { yaw: number; pitch: number } {
   return {
     yaw: yaw - dx * YAW_PER_PX,
-    pitch: Math.max(PITCH_MIN, Math.min(PITCH_MAX, pitch + dy * PITCH_PER_PX)),
+    pitch: clampPitch(pitch + dy * PITCH_PER_PX, fovDeg),
   };
 }
 
