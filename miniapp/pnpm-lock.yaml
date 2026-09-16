@@ -253,6 +253,9 @@ importers:
       '@tarojs/cli':
         specifier: ^3.6.40
         version: 3.6.40(@tarojs/taro@3.6.40(@tarojs/helper@3.6.40(supports-color@8.1.1))(@tarojs/runtime@3.6.40(@tarojs/shared@3.6.40))(postcss@8.5.28))(@types/node@26.4.1)(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1)
+      '@tarojs/taro-loader':
+        specifier: 3.6.40
+        version: 3.6.40(@tarojs/runtime@3.6.40(@tarojs/shared@3.6.40))(postcss@8.5.28)(supports-color@8.1.1)
       babel-preset-taro:
         specifier: ^3.6.40
         version: 3.6.40(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1)

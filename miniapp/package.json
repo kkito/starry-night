@@ -21,6 +21,7 @@
   "type": "module",
   "devDependencies": {
     "@tarojs/cli": "^3.6.40",
+    "@tarojs/taro-loader": "3.6.40",
     "babel-preset-taro": "^3.6.40",
     "typescript": "^5.9.3",
     "webpack": "5.78.0"
@@ -36,9 +37,9 @@
     "@tarojs/shared": "^3.6.40",
     "@tarojs/taro": "^3.6.40",
     "@tarojs/webpack5-runner": "^3.6.40",
+    "astronomy-engine": "^2.1.19",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "astronomy-engine": "^2.1.19",
     "three": "0.158.0"
   }
 }

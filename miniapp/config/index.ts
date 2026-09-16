@@ -28,6 +28,11 @@ const config: UserConfigExport<'webpack5'> = {
   },
   framework: 'react',
   compiler: 'webpack5',
+  // webpack 持久化缓存（filesystem）：二次编译提速，构建不再提示"建议开启持久化缓存"。
+  // 见 webpack5-runner BaseConfig：仅当 cache.enable 为真才配缓存。
+  cache: {
+    enable: true,
+  },
   // 验证性配置：把仓根外 ../src 纳入 babel-loader 处理范围（Task 2）。
   // 原因：Taro 默认 script rule 只含 sourceDir，根外 TS 会报 Module parse failed（type 语法无法解析）。
   // 实测：compile.include 与顶层 webpackChain 均无效，mini.webpackChain 生效。
@@ -35,6 +40,9 @@ const config: UserConfigExport<'webpack5'> = {
     webpackChain(chain) {
       const rootSrc = path.resolve(__dirname, '..', '..', 'src');
       const vendorDir = path.resolve(__dirname, '..', 'src', 'vendor');
+      // weapp 只走 Sky3DAdapter（外置 vendor）：npm three 是死代码（同页 import 的 H5 版 Sky3D.tsx
+      // 引用），alias 到 stub 让它不进包（实测 593 KiB → ~100 KiB 级）。H5 构建保持真 three。
+      chain.resolve.alias.set('three', path.resolve(__dirname, '..', 'three-stub.js'));
       chain.module
         .rule('script')
         .include.add(rootSrc)
