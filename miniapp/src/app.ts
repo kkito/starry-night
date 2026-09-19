@@ -1,7 +1,17 @@
-import { Component, PropsWithChildren } from 'react';
+import { PropsWithChildren } from 'react'
+import { useLaunch } from '@tarojs/taro'
 
-export default class App extends Component<PropsWithChildren> {
-  render() {
-    return this.props.children;
-  }
+import './app.scss'
+
+function App({ children }: PropsWithChildren<any>) {
+  useLaunch(() => {
+    console.log('App launched.')
+  })
+
+  // children 是将要会渲染的页面
+  return children
 }
+  
+
+
+export default App

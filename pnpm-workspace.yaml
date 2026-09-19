@@ -3,6 +3,7 @@ packages:
   - packages/*
   - miniapp
 allowBuilds:
+  '@parcel/watcher': false
   '@swc/core': false
   '@tarojs/binding': false
   '@tarojs/cli': false

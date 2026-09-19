@@ -1,99 +1,102 @@
-import path from 'path';
-import type { UserConfigExport } from '@tarojs/cli';
-import devConfig from './dev';
-import prodConfig from './prod';
+import { defineConfig, type UserConfigExport } from '@tarojs/cli'
+import TsconfigPathsPlugin from 'tsconfig-paths-webpack-plugin'
+import devConfig from './dev'
+import prodConfig from './prod'
 
-const config: UserConfigExport<'webpack5'> = {
-  projectName: 'miniapp',
-  date: '2026-09-08',
-  designWidth: 750,
-  deviceRatio: {
-    640: 2.34 / 2,
-    750: 1,
-    828: 1.81 / 2,
-  },
-  sourceRoot: 'src',
-  outputRoot: 'dist',
-  plugins: [],
-  defineConstants: {
-    // 关键：Taro 的 DefinePlugin 需要显式声明才会在构建时替换 process.env.TARO_ENV。
-    // 默认分支走 weapp，避免业务代码里的 isWeapp() 在 weapp 产物中误判为 H5。
-    'process.env.TARO_ENV': JSON.stringify(process.env.TARO_ENV ?? 'weapp'),
-  },
-  copy: {
-    // vendor 不走 copy 插件：to 相对项目根（实测拷到 miniapp/pages/），而运行时要的是
-    // dist/pages/index/。改由构建后脚本直拷（见 scripts/copy-vendor-weapp.mjs）。
-    patterns: [],
-    options: {},
-  },
-  framework: 'react',
-  compiler: 'webpack5',
-  // webpack 持久化缓存（filesystem）：二次编译提速，构建不再提示"建议开启持久化缓存"。
-  // 见 webpack5-runner BaseConfig：仅当 cache.enable 为真才配缓存。
-  cache: {
-    enable: true,
-  },
-  // 验证性配置：把仓根外 ../src 纳入 babel-loader 处理范围（Task 2）。
-  // 原因：Taro 默认 script rule 只含 sourceDir，根外 TS 会报 Module parse failed（type 语法无法解析）。
-  // 实测：compile.include 与顶层 webpackChain 均无效，mini.webpackChain 生效。
-  mini: {
-    webpackChain(chain) {
-      const rootSrc = path.resolve(__dirname, '..', '..', 'src');
-      const skyCoreSrc = path.resolve(__dirname, '..', '..', 'packages', 'sky-core', 'src');
-      const vendorDir = path.resolve(__dirname, '..', 'src', 'vendor');
-      // sky-core exports 指向 .ts 源码：alias 到源码目录并纳入 babel 处理（同 rootSrc 的教训）。
-      chain.resolve.alias.set('@starry/sky-core', skyCoreSrc);
-      // weapp 只走 Sky3DAdapter（外置 vendor）：npm three 是死代码（同页 import 的 H5 版 Sky3D.tsx
-      // 引用），alias 到 stub 让它不进包（实测 593 KiB → ~100 KiB 级）。H5 构建保持真 three。
-      chain.resolve.alias.set('three', path.resolve(__dirname, '..', 'three-stub.js'));
-      chain.module
-        .rule('script')
-        .include.add(rootSrc)
-        .add(skyCoreSrc)
-        .end()
-        // vendor 是已打好的 ES5 包（threejs-miniprogram r108 UMD）：必须完全跳过 babel。
-        // 教训：只配 noParse 不够——babel-loader 照样给它注入 transform-runtime 的
-        // require(绝对路径…/helpers/typeof.js)，noParse 又让 webpack 不解析这个 require，
-        // 原样留到运行时，小程序里就报 module is not defined。exclude 让 babel 碰都不碰。
-        .exclude.add(vendorDir)
-        .end();
+// https://taro-docs.jd.com/docs/next/config#defineconfig-辅助函数
+export default defineConfig<'webpack5'>(async (merge, { command, mode }) => {
+  const baseConfig: UserConfigExport<'webpack5'> = {
+    projectName: 'starry-taro',
+    date: '2026-9-19',
+    designWidth: 750,
+    deviceRatio: {
+      640: 2.34 / 2,
+      750: 1,
+      375: 2,
+      828: 1.81 / 2
     },
-    postcss: {
-      pxtransform: {
-        enable: true,
-        config: {},
-      },
+    sourceRoot: 'src',
+    outputRoot: 'dist',
+    plugins: [
+      "@tarojs/plugin-generator"
+    ],
+    defineConstants: {
     },
-  },
-  h5: {
-    publicPath: '/',
-    staticDirectory: 'static',
-    webpackChain(chain) {
-      const rootSrc = path.resolve(__dirname, '..', '..', 'src');
-      const skyCoreSrc = path.resolve(__dirname, '..', '..', 'packages', 'sky-core', 'src');
-      // 同 mini：sky-core 的 .ts 源码 exports 需要 alias + babel 处理。
-      chain.resolve.alias.set('@starry/sky-core', skyCoreSrc);
-      chain.module
-        .rule('script')
-        .include.add(rootSrc)
-        .add(skyCoreSrc)
-        .end();
+    copy: {
+      patterns: [
+      ],
+      options: {
+      }
     },
-    postcss: {
-      autoprefixer: {
-        enable: true,
-        config: {},
-      },
+    framework: 'react',
+    compiler: 'webpack5',
+    cache: {
+      enable: false // Webpack 持久化缓存配置，建议开启。默认配置请参考：https://docs.taro.zone/docs/config-detail#cache
     },
-  },
-};
+    mini: {
+      postcss: {
+        pxtransform: {
+          enable: true,
+          config: {
 
-export default function defineConfig(
-  merge: (base: unknown, ...sources: unknown[]) => Record<string, unknown>,
-) {
-  const base = { ...config };
-  if (process.env.NODE_ENV === 'development') {
-    return merge(base, devConfig);
+          }
+        },
+        cssModules: {
+          enable: false, // 默认为 false，如需使用 css modules 功能，则设为 true
+          config: {
+            namingPattern: 'module', // 转换模式，取值为 global/module
+            generateScopedName: '[name]__[local]___[hash:base64:5]'
+          }
+        }
+      },
+      webpackChain(chain) {
+        chain.resolve.plugin('tsconfig-paths').use(TsconfigPathsPlugin)
+      }
+    },
+    h5: {
+      publicPath: '/',
+      staticDirectory: 'static',
+      output: {
+        filename: 'js/[name].[hash:8].js',
+        chunkFilename: 'js/[name].[chunkhash:8].js'
+      },
+      miniCssExtractPluginOption: {
+        ignoreOrder: true,
+        filename: 'css/[name].[hash].css',
+        chunkFilename: 'css/[name].[chunkhash].css'
+      },
+      postcss: {
+        autoprefixer: {
+          enable: true,
+          config: {}
+        },
+        cssModules: {
+          enable: false, // 默认为 false，如需使用 css modules 功能，则设为 true
+          config: {
+            namingPattern: 'module', // 转换模式，取值为 global/module
+            generateScopedName: '[name]__[local]___[hash:base64:5]'
+          }
+        }
+      },
+      webpackChain(chain) {
+        chain.resolve.plugin('tsconfig-paths').use(TsconfigPathsPlugin)
+      }
+    },
+    rn: {
+      appName: 'taroDemo',
+      postcss: {
+        cssModules: {
+          enable: false, // 默认为 false，如需使用 css modules 功能，则设为 true
+        }
+      }
+    }
   }
-  return merge(base, prodConfig);
-}
+
+
+  if (process.env.NODE_ENV === 'development') {
+    // 本地开发构建配置（不混淆压缩）
+    return merge({}, baseConfig, devConfig)
+  }
+  // 生产构建配置（默认开启压缩混淆等）
+  return merge({}, baseConfig, prodConfig)
+})

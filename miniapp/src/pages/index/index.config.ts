@@ -1,3 +1,3 @@
-export default {
-  navigationBarTitleText: 'starry-night',
-};
+export default definePageConfig({
+  navigationBarTitleText: '首页'
+})
