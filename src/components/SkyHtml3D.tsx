@@ -3,7 +3,15 @@ import { useEffect, useRef, useState } from 'react';
 import { StarTooltip } from './StarTooltip';
 import { projectHtml3D } from '@starry/sky-core/lib/sky-html3d';
 import { drawSkyScene } from '@starry/sky-core/lib/sky-scene';
-import type { Sky3DProps } from './Sky3D';
+import type { DrawStar } from '@starry/sky-core/lib/drawlist';
+import type { StarTrack } from '@starry/sky-core/lib/track';
+
+export interface Sky3DProps {
+  stars: DrawStar[];
+  track: StarTrack | null;
+  selectedId: string | null;
+  onSelect?: (id: string | null) => void;
+}
 
 const PICK_PX = 22;
 
