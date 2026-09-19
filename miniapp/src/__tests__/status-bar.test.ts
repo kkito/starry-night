@@ -4,8 +4,7 @@ import path from 'node:path';
 
 const read = (p: string) => fs.readFileSync(path.resolve(__dirname, p), 'utf8');
 
-// 页面装配断言在后续任务落地 pages 后恢复（当前为 Taro 空脚手架）
-describe.skip('status bar + viewMode parity (Web App.tsx)', () => {
+describe('status bar + viewMode parity (Web App.tsx)', () => {
   it('主页 summary 与 Web 版状态栏对齐：坐标/时间/恒星时/可见星四格', () => {
     // summary 四格收进 StatusBar 组件（ui.tsx）：主页断言装配传参，ui 断言四格渲染
     const page = read('../pages/index/index.tsx');

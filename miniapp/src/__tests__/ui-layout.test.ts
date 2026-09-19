@@ -13,8 +13,7 @@ describe('miniapp UI 梳理（tokens 对齐 + testid 不破）', () => {
       expect(ui, name).toContain(`export function ${name}`);
     }
   });
-  // 页面在后续任务落地后恢复断言（当前为 Taro 空脚手架，pages/index 未接组件）
-  it.skip('主页用 TopBar + StatusBar（导航三页跳转不变）', () => {
+  it('主页用 TopBar + StatusBar（导航三页跳转不变）', () => {
     const page = read('../pages/index/index.tsx');
     expect(page).toContain('TopBar');
     expect(page).toContain('StatusBar');
@@ -22,7 +21,7 @@ describe('miniapp UI 梳理（tokens 对齐 + testid 不破）', () => {
     expect(page).toContain("url: '/pages/settings/index'");
     expect(page).toContain("url: '/pages/table/index'");
   });
-  it.skip('既有 data-testid 全部保留', () => {
+  it('既有 data-testid 全部保留', () => {
     const index = read('../pages/index/index.tsx');
     // summary / viewmode-switch testid 分别收进 StatusBar / ViewModeSwitch 组件，主页只断言组件装配
     for (const id of ['open-settings', 'open-table', 'StatusBar', 'ViewModeSwitch']) {
@@ -37,7 +36,7 @@ describe('miniapp UI 梳理（tokens 对齐 + testid 不破）', () => {
     const table = read('../pages/table/index.tsx');
     expect(table).toContain('filter');
   });
-  it.skip('深色导航栏（对齐星空底色）', () => {
+  it('深色导航栏（对齐星空底色）', () => {
     const cfg = read('../app.config.ts');
     expect(cfg).toContain('#0d1220');
     expect(cfg).toContain("'starry-night'");
