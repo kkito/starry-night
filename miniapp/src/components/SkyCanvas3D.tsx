@@ -3,7 +3,7 @@
 // 手势状态机沿用旧 Sky3DAdapter（a22767a）的单指拖拽/双指 pinch/tap 点选，
 // 系数集中在 ./sky3d-math 纯函数（与 web 版一致）。
 import { useEffect, useRef, useState } from 'react';
-import { Canvas, View, Text } from '@tarojs/components';
+import { Canvas, View } from '@tarojs/components';
 import { drawSkyScene } from '@starry/sky-core/lib/sky-scene';
 import type { DrawStar } from '@starry/sky-core/lib/drawlist';
 import type { StarTrack } from '@starry/sky-core/lib/track';
@@ -33,8 +33,6 @@ export function SkyCanvas3D({ stars, track, selectedId, onSelect }: Sky3DProps) 
   const rectRef = useRef<{ left: number; top: number } | null>(null);
   const touchRef = useRef<{ lastX: number; lastY: number; pinchD: number; moved: boolean; startX: number; startY: number } | null>(null);
   const [, force] = useState(0);
-  // 初始化诊断（真机验收后可删）：初始化卡住/失败时上屏，不再静默黑屏
-  const [dbg, setDbg] = useState<{ ready: boolean; w: number; h: number; dpr: number; attempts: number; err: string | null } | null>(null);
   // Canvas 元素显式 px 尺寸（StarChart/旧 adapter 同款）：weapp 下 100% 会让原生 canvas
   // 退回默认 300×150 并被 flex 居中，缓冲区内容被压缩进小元素而“黑屏”。
   const [size, setSize] = useState<{ w: number; h: number } | null>(null);
@@ -43,12 +41,11 @@ export function SkyCanvas3D({ stars, track, selectedId, onSelect }: Sky3DProps) 
     const rt = canvasRef.current;
     if (!rt) return;
     const ctx = rt.canvas.getContext('2d');
-    if (!ctx) { console.warn('[sky3d] redraw skip: no ctx'); return; }
+    if (!ctx) return;
     posRef.current = drawSkyScene(ctx, {
       w: rt.w, h: rt.h, cam: camRef.current,
       stars: dataRef.current.stars, track: dataRef.current.track,
     });
-    console.log(`[sky3d] drew stars=${dataRef.current.stars.length}`);
     force((n) => n + 1);
   };
 
@@ -57,18 +54,14 @@ export function SkyCanvas3D({ stars, track, selectedId, onSelect }: Sky3DProps) 
     let attempt = 0;
     const vp = getViewport();
     // 取 node/rect 复用 web-env 的共享链路（StarChart 同款，weapp 按 TARO_ENV 判端）；
-    // node 晚就绪时重试有限次，最终失败落 dbg 状态上屏（不再静默黑屏）。
+    // node 晚就绪时重试有限次后放弃（真机 canvas node 可能晚于 effect 就绪）。
     const tryInit = () => {
       if (!alive) return;
-      // 排查日志（真机验收后删）：node 获取/尺寸/绘制每步上 Console
-      console.log(`[sky3d] tryInit attempt=${attempt}`);
       getGLCanvasNode(SKY3D_CANVAS_ID)
         .then((canvas: any) => {
           if (!alive) return;
-          console.log('[sky3d] node ok', !!canvas, 'width=', canvas?.width);
           return getCanvasRect(SKY3D_CANVAS_ID).then((r) => {
             if (!alive) return;
-            console.log('[sky3d] rect', JSON.stringify(r));
             rectRef.current = r;
             // DPR 封顶 2（硬性约束）：物理尺寸放大 node，逻辑尺寸走 Canvas 元素 style
             const dpr = clampPixelRatio(vp.pixelRatio);
@@ -83,24 +76,18 @@ export function SkyCanvas3D({ stars, track, selectedId, onSelect }: Sky3DProps) 
             canvas.getContext('2d')?.scale(dpr, dpr);
             canvasRef.current = { canvas, w, h };
             setSize({ w, h });
-            setDbg({ ready: true, w, h, dpr, attempts: attempt + 1, err: null });
             redraw();
-            console.log(`[sky3d] init done w=${w} h=${h} dpr=${dpr} stars=${dataRef.current.stars.length}`);
           });
         })
-        .catch((err: unknown) => {
+        .catch(() => {
           if (!alive) return;
-          console.warn(`[sky3d] node missing attempt=${attempt}`, String(err));
           if (attempt < 30) {
             attempt += 1;
             setTimeout(tryInit, 100 + attempt * 50);
-          } else {
-            setDbg({ ready: false, w: 0, h: 0, dpr: 0, attempts: attempt + 1, err: String(err) });
-            console.error('[sky3d] init failed after retries', String(err));
           }
         });
     };
-    tryInit(0);
+    tryInit();
     return () => { alive = false; canvasRef.current = null; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -214,11 +201,6 @@ export function SkyCanvas3D({ stars, track, selectedId, onSelect }: Sky3DProps) 
         >
           <StarTooltip star={selected} x={selPos.x} y={selPos.y} />
         </View>
-      )}
-      {dbg && !dbg.ready && (
-        <Text data-testid='sky3d-debug' style={{ position: 'absolute', left: 8, top: 8, color: '#e8b45a', fontSize: 11 }}>
-          3D init: try{dbg.attempts} err={dbg.err ?? '…'}
-        </Text>
       )}
     </View>
   );
