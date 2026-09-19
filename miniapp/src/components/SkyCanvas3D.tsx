@@ -40,11 +40,12 @@ export function SkyCanvas3D({ stars, track, selectedId, onSelect }: Sky3DProps) 
     const rt = canvasRef.current;
     if (!rt) return;
     const ctx = rt.canvas.getContext('2d');
-    if (!ctx) return;
+    if (!ctx) { console.warn('[sky3d] redraw skip: no ctx'); return; }
     posRef.current = drawSkyScene(ctx, {
       w: rt.w, h: rt.h, cam: camRef.current,
       stars: dataRef.current.stars, track: dataRef.current.track,
     });
+    console.log(`[sky3d] drew stars=${dataRef.current.stars.length}`);
     force((n) => n + 1);
   };
 
@@ -56,11 +57,15 @@ export function SkyCanvas3D({ stars, track, selectedId, onSelect }: Sky3DProps) 
     // node 晚就绪时重试有限次，最终失败落 dbg 状态上屏（不再静默黑屏）。
     const tryInit = () => {
       if (!alive) return;
+      // 排查日志（真机验收后删）：node 获取/尺寸/绘制每步上 Console
+      console.log(`[sky3d] tryInit attempt=${attempt}`);
       getGLCanvasNode(SKY3D_CANVAS_ID)
         .then((canvas: any) => {
           if (!alive) return;
+          console.log('[sky3d] node ok', !!canvas, 'width=', canvas?.width);
           return getCanvasRect(SKY3D_CANVAS_ID).then((r) => {
             if (!alive) return;
+            console.log('[sky3d] rect', JSON.stringify(r));
             rectRef.current = r;
             // DPR 封顶 2（硬性约束）：物理尺寸放大 node，逻辑尺寸走 Canvas 元素 style
             const dpr = clampPixelRatio(vp.pixelRatio);
@@ -76,15 +81,18 @@ export function SkyCanvas3D({ stars, track, selectedId, onSelect }: Sky3DProps) 
             canvasRef.current = { canvas, w, h };
             setDbg({ ready: true, w, h, dpr, attempts: attempt + 1, err: null });
             redraw();
+            console.log(`[sky3d] init done w=${w} h=${h} dpr=${dpr} stars=${dataRef.current.stars.length}`);
           });
         })
         .catch((err: unknown) => {
           if (!alive) return;
+          console.warn(`[sky3d] node missing attempt=${attempt}`, String(err));
           if (attempt < 30) {
             attempt += 1;
             setTimeout(tryInit, 100 + attempt * 50);
           } else {
             setDbg({ ready: false, w: 0, h: 0, dpr: 0, attempts: attempt + 1, err: String(err) });
+            console.error('[sky3d] init failed after retries', String(err));
           }
         });
     };
