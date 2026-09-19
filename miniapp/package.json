@@ -38,6 +38,8 @@
   "author": "",
   "dependencies": {
     "@babel/runtime": "^7.24.4",
+    "@starry/sky-core": "workspace:*",
+    "astronomy-engine": "^2.1.19",
     "@tarojs/components": "4.2.1",
     "@tarojs/helper": "4.2.1",
     "@tarojs/plugin-platform-weapp": "4.2.1",

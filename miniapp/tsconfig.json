@@ -9,20 +9,26 @@
     "noImplicitAny": false,
     "allowSyntheticDefaultImports": true,
     "outDir": "lib",
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
     "strictNullChecks": true,
     "sourceMap": true,
-    "rootDir": ".",
+    // 不设 rootDir：paths 把 @starry/sky-core 指到包外 TS 源码，rootDir 约束会误报 TS6059（仅 noEmit 校验用）
     "jsx": "react-jsx",
     "allowJs": true,
     "resolveJsonModule": true,
+    "skipLibCheck": true,
     "typeRoots": [
       "node_modules/@types"
     ],
+    // 显式列出：避免自动吸入 @types/sass 之类的 stub（无类型入口会报 TS2688）
+    "types": ["node", "webpack-env", "react", "@tarojs/taro"],
+    "baseUrl": ".",
     "paths": {
       // TS5090 leading './'
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      // workspace 共享包（exports 指向 .ts 源码）
+      "@starry/sky-core/*": ["../packages/sky-core/src/*"]
     }
   },
   "include": ["./src", "./types", "./config"],

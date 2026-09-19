@@ -1,10 +1,19 @@
 import { defineConfig, type UserConfigExport } from '@tarojs/cli'
+import path from 'node:path'
 import TsconfigPathsPlugin from 'tsconfig-paths-webpack-plugin'
 import devConfig from './dev'
 import prodConfig from './prod'
 
+// 共享源码包：sky-core 的 exports 指向 .ts 源码，需要 alias 到源码目录并纳入 babel 处理，
+// 否则 Taro 默认 script rule 只含 sourceDir，包外 TS 会报 Module parse failed（唯一非标配置）。
+const skyCoreSrc = path.resolve(__dirname, '..', '..', 'packages', 'sky-core', 'src')
+function applySkyCore(chain: any): void {
+  chain.resolve.alias.set('@starry/sky-core', skyCoreSrc)
+  chain.module.rule('script').include.add(skyCoreSrc)
+}
+
 // https://taro-docs.jd.com/docs/next/config#defineconfig-辅助函数
-export default defineConfig<'webpack5'>(async (merge, { command, mode }) => {
+export default defineConfig<'webpack5'>(async (merge, _options) => {
   const baseConfig: UserConfigExport<'webpack5'> = {
     projectName: 'starry-taro',
     date: '2026-9-19',
@@ -50,6 +59,7 @@ export default defineConfig<'webpack5'>(async (merge, { command, mode }) => {
         }
       },
       webpackChain(chain) {
+        applySkyCore(chain)
         chain.resolve.plugin('tsconfig-paths').use(TsconfigPathsPlugin)
       }
     },
@@ -79,6 +89,7 @@ export default defineConfig<'webpack5'>(async (merge, { command, mode }) => {
         }
       },
       webpackChain(chain) {
+        applySkyCore(chain)
         chain.resolve.plugin('tsconfig-paths').use(TsconfigPathsPlugin)
       }
     },

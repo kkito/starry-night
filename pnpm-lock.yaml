@@ -60,6 +60,9 @@ importers:
       '@babel/runtime':
         specifier: ^7.24.4
         version: 7.29.7
+      '@starry/sky-core':
+        specifier: workspace:*
+        version: link:../packages/sky-core
       '@tarojs/components':
         specifier: 4.2.1
         version: 4.2.1(@tarojs/helper@4.2.1)(@types/react@18.3.31)(html-webpack-plugin@5.6.8(webpack@5.91.0(@swc/core@1.3.96)(esbuild@0.28.2)(postcss@8.5.28)))(postcss@8.5.28)(rollup@3.30.0)(webpack-chain@6.5.1)(webpack-dev-server@4.15.2(webpack@5.91.0(@swc/core@1.3.96)(esbuild@0.28.2)(postcss@8.5.28)))(webpack@5.91.0(@swc/core@1.3.96)(esbuild@0.28.2)(postcss@8.5.28))
@@ -105,6 +108,9 @@ importers:
       '@tarojs/taro':
         specifier: 4.2.1
         version: 4.2.1(@tarojs/components@4.2.1(@tarojs/helper@4.2.1)(@types/react@18.3.31)(html-webpack-plugin@5.6.8(webpack@5.91.0(@swc/core@1.3.96)(esbuild@0.28.2)(postcss@8.5.28)))(postcss@8.5.28)(rollup@3.30.0)(webpack-chain@6.5.1)(webpack-dev-server@4.15.2(webpack@5.91.0(@swc/core@1.3.96)(esbuild@0.28.2)(postcss@8.5.28)))(webpack@5.91.0(@swc/core@1.3.96)(esbuild@0.28.2)(postcss@8.5.28)))(@tarojs/helper@4.2.1)(@tarojs/shared@4.2.1)(@types/react@18.3.31)(html-webpack-plugin@5.6.8(webpack@5.91.0(@swc/core@1.3.96)(esbuild@0.28.2)(postcss@8.5.28)))(postcss@8.5.28)(rollup@3.30.0)(webpack-chain@6.5.1)(webpack-dev-server@4.15.2(webpack@5.91.0(@swc/core@1.3.96)(esbuild@0.28.2)(postcss@8.5.28)))(webpack@5.91.0(@swc/core@1.3.96)(esbuild@0.28.2)(postcss@8.5.28))
+      astronomy-engine:
+        specifier: ^2.1.19
+        version: 2.1.19
       react:
         specifier: ^18.0.0
         version: 18.3.1
@@ -2329,10 +2335,6 @@ packages:
   '@types/minimatch@5.1.2':
     resolution: {integrity: sha512-K0VQKziLUWkVKiRVrx4a40iPaxTUefQmjtkQofBkYRcoaaL/8rhwDWww9qWbrgicNOgnpIsMxyNIUM4+n6dUIA==}
 
-  '@types/minimatch@6.0.0':
-    resolution: {integrity: sha512-zmPitbQ8+6zNutpwgcQuLcsEpn/Cj54Kbn7L5pX0Os5kdWplB7xPgEh/g+SWOB/qmows2gpuCaPyduq8ZZRnxA==}
-    deprecated: This is a stub types definition. minimatch provides its own type definitions, so you do not need this installed.
-
   '@types/ms@2.1.0':
     resolution: {integrity: sha512-GsCCIZDE/p3i96vtEqx+7dBUGXrc7zeSK3wwPHIaRThS+9OhWIXRqzs4d6k1SVU8g91DrNRWxWUGhp5KXQb2VA==}
 
@@ -4541,9 +4543,6 @@ packages:
     engines: {node: '>=0.10.0'}
     hasBin: true
 
-  immutable@4.3.9:
-    resolution: {integrity: sha512-ObHy4YN7ycwZOUCLI1/6svfyAFu7vL8RhAvVu/bh/RZW9EPlOyDaQ9jDQWCtdqzaXUjgXZCW1migtHE7YI7UGQ==}
-
   immutable@5.1.9:
     resolution: {integrity: sha512-m8nVez3rwrgmWxtLMt1ZYXB2Lv7OKYn/disyxAlSDYAlKSlFoPPfIAmAM/M5xqL4m4C/wAPw7S2/CNaUii1Hxg==}
 
@@ -6339,11 +6338,6 @@ packages:
   sass@1.104.1:
     resolution: {integrity: sha512-yDA+1aIG3EHgN4V/BvuhCvu61FF6hEd4e+9DxikUm9U0CAGuvdIZ/UYy7qbOxjhbbWQraoyLlMuzdRGOSV5Bmw==}
     engines: {node: '>=20.19.0'}
-    hasBin: true
-
-  sass@1.50.0:
-    resolution: {integrity: sha512-cLsD6MEZ5URXHStxApajEh7gW189kkjn4Rc8DQweMyF+o5HF5nfEz8QYLMlPsTOD88DknatTmBWkOcw5/LnJLQ==}
-    engines: {node: '>=12.0.0'}
     hasBin: true
 
   sax@1.2.4:
@@ -9724,7 +9718,7 @@ snapshots:
 
   '@types/glob@7.2.0':
     dependencies:
-      '@types/minimatch': 6.0.0
+      '@types/minimatch': 5.1.2
       '@types/node': 26.4.1
 
   '@types/html-minifier-terser@6.1.0': {}
@@ -9762,10 +9756,6 @@ snapshots:
   '@types/mime@1.3.5': {}
 
   '@types/minimatch@5.1.2': {}
-
-  '@types/minimatch@6.0.0':
-    dependencies:
-      minimatch: 10.2.6
 
   '@types/ms@2.1.0': {}
 
@@ -9813,7 +9803,7 @@ snapshots:
 
   '@types/sass@1.45.0':
     dependencies:
-      sass: 1.50.0
+      sass: 1.104.1
 
   '@types/semver@7.8.0': {}
 
@@ -12377,8 +12367,6 @@ snapshots:
   image-size@0.5.5:
     optional: true
 
-  immutable@4.3.9: {}
-
   immutable@5.1.9: {}
 
   import-fresh@3.3.1:
@@ -14170,12 +14158,6 @@ snapshots:
     optionalDependencies:
       '@parcel/watcher': 2.6.0
 
-  sass@1.50.0:
-    dependencies:
-      chokidar: 3.6.0
-      immutable: 4.3.9
-      source-map-js: 1.2.1
-
   sax@1.2.4: {}
 
   sax@1.6.1: {}
@@ -14227,7 +14209,7 @@ snapshots:
       loglevel: 1.9.2
       loglevel-plugin-prefix: 0.8.4
       pretty-bytes: 5.6.0
-      sass: 1.50.0
+      sass: 1.104.1
       tslib: 1.14.1
 
   seek-bzip@1.0.6:
