@@ -5,7 +5,7 @@ import { COLORS, FONTS, buttonStyle } from '@starry/sky-core/lib/tokens';
 
 export type AspectPref = 'auto' | 'landscape' | 'portrait';
 export type ShapePref = 'ellipse' | 'circle';
-export type ViewMode = '2d' | '3d' | 'html3d';
+export type ViewMode = '2d' | '3d';
 /** live：跟随当前时间（定期刷新）；fixed：使用选定的本地时间 */
 export type TimeMode = 'live' | 'fixed';
 
@@ -42,7 +42,7 @@ export function validateView(v: ViewParams): string | null {
   if (!Number.isFinite(v.topN) || v.topN < 1 || v.topN > 500) return 'topN 必须在 [1, 500]';
   if (!['auto', 'landscape', 'portrait'].includes(v.aspect)) return 'aspect 无效';
   if (!['ellipse', 'circle'].includes(v.shape)) return 'shape 无效';
-  if (!['2d', '3d', 'html3d'].includes(v.viewMode)) return 'viewMode 无效';
+  if (!['2d', '3d'].includes(v.viewMode)) return 'viewMode 无效';
   return null;
 }
 

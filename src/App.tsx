@@ -4,7 +4,6 @@ import { buildDrawList, buildSolarDrawList } from '@starry/sky-core/lib/drawlist
 import { computeTrackAround } from '@starry/sky-core/lib/track';
 import { zhName } from '@starry/sky-core/lib/names';
 import { StarChart, CANVAS_MARGIN, useViewportSize } from './components/StarChart';
-import { Sky3D } from './components/Sky3D';
 import { SkyHtml3D } from './components/SkyHtml3D';
 import { SettingsDialog, toLocalInput, type ViewParams } from './components/SettingsDialog';
 import { ViewModeSwitch } from './components/ViewModeSwitch';
@@ -14,7 +13,7 @@ import { COLORS, FONTS } from '@starry/sky-core/lib/tokens';
 
 const ASPECT_RATIO = { landscape: 16 / 9, portrait: 9 / 16 } as const;
 
-const DEFAULT_VIEW: ViewParams = { lat: 31.2304, lon: 121.4737, date: toLocalInput(new Date()), timeMode: 'live', topN: 50, aspect: 'auto', showSolar: true, mirror: false, shape: 'ellipse', viewMode: 'html3d' };
+const DEFAULT_VIEW: ViewParams = { lat: 31.2304, lon: 121.4737, date: toLocalInput(new Date()), timeMode: 'live', topN: 50, aspect: 'auto', showSolar: true, mirror: false, shape: 'ellipse', viewMode: '3d' };
 
 /** 按比例偏好计算画布尺寸：auto 跟随窗口，横/竖屏固定 16:9 / 9:16 并在视口内居中。 */
 function canvasSize(vp: { width: number; height: number }, aspect: ViewParams['aspect']): { width: number; height: number } {
@@ -91,10 +90,8 @@ export default function App() {
   return (
     <main style={{ position: 'relative', width: '100vw', height: '100dvh', overflow: 'hidden', color: COLORS.ink, fontFamily: FONTS.ui }}>
       <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        {view.viewMode === 'html3d' ? (
+        {view.viewMode === '3d' ? (
           <SkyHtml3D stars={sky.drawStars} track={track} selectedId={selectedId} onSelect={setSelectedId} />
-        ) : view.viewMode === '3d' ? (
-          <Sky3D stars={sky.drawStars} track={track} selectedId={selectedId} onSelect={setSelectedId} />
         ) : (
           <StarChart
             stars={sky.drawStars}

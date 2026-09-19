@@ -85,6 +85,6 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('switch', { name: '2D 视图' }));
     expect(screen.getByTestId('star-canvas')).toBeTruthy();
     fireEvent.click(screen.getByRole('switch', { name: '3D 视图' }));
-    expect(screen.getByTestId('skydome-fallback')).toBeTruthy();
+    expect(screen.getByTestId('skydome-html3d')).toBeTruthy();
   });
 });

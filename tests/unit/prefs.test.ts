@@ -30,6 +30,11 @@ describe('view 偏好持久化', () => {
     expect(loadViewPrefs(base()).viewMode).toBe('3d');
   });
 
+  it('老值 html3d 自动迁移为 3d', () => {
+    localStorage.setItem('starry-night.view', JSON.stringify({ viewMode: 'html3d' }));
+    expect(loadViewPrefs(base()).viewMode).toBe('3d');
+  });
+
   it('无存储时回退默认值', () => {
     expect(loadViewPrefs(base())).toEqual(base());
   });

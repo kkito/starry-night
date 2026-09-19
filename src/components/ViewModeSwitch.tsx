@@ -17,9 +17,9 @@ export function ViewModeSwitch({ value, onChange }: { value: ViewMode; onChange:
         gap: 0,
       }}
     >
-      {(['2d', '3d', 'html3d'] as const).map((m) => {
+      {(['2d', '3d'] as const).map((m) => {
         const active = value === m;
-        const label = m === '2d' ? '2D 视图' : m === '3d' ? '3D 视图' : 'HTML3D 视图';
+        const label = m === '2d' ? '2D 视图' : '3D 视图';
         return (
           <button
             key={m}

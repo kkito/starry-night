@@ -18,7 +18,10 @@ export function loadViewPrefs(defaults: ViewParams): ViewParams {
   try {
     const raw = localStorage.getItem(STORAGE_KEY) ?? localStorage.getItem('stardemo.view');
     if (!raw) return defaults;
-    const merged = { ...defaults, ...JSON.parse(raw), date: toLocalInput(new Date()) } as ViewParams;
+    const parsed = JSON.parse(raw) as Partial<ViewParams>;
+    // 老用户存量的 'html3d' 档已收敛进 '3d'（canvas 版），读出时自动迁移
+    if ((parsed.viewMode as string) === 'html3d') parsed.viewMode = '3d';
+    const merged = { ...defaults, ...parsed, date: toLocalInput(new Date()) } as ViewParams;
     return validateView(merged) ? defaults : merged;
   } catch {
     return defaults;

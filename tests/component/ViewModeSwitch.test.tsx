@@ -18,30 +18,24 @@ describe('ViewModeSwitch', () => {
     fireEvent.click(screen.getByRole('switch', { name: '2D 视图' }));
     expect(onChange).toHaveBeenCalledWith('2d');
   });
-  it('渲染三档，HTML3D 可切换', () => {
-    render(<ViewModeSwitch value="html3d" onChange={vi.fn()} />);
-    expect(screen.getByRole('switch', { name: 'HTML3D 视图' }).getAttribute('aria-checked')).toBe('true');
-    expect(screen.getByRole('switch', { name: '3D 视图' }).getAttribute('aria-checked')).toBe('false');
-  });
-  it('点击 HTML3D 回调', () => {
-    const onChange = vi.fn();
-    render(<ViewModeSwitch value="3d" onChange={onChange} />);
-    fireEvent.click(screen.getByRole('switch', { name: 'HTML3D 视图' }));
-    expect(onChange).toHaveBeenCalledWith('html3d');
+  it('只有 2D/3D 两档，无 HTML3D 档', () => {
+    render(<ViewModeSwitch value="3d" onChange={vi.fn()} />);
+    expect(screen.getByRole('switch', { name: '3D 视图' })).toBeTruthy();
+    expect(screen.queryByRole('switch', { name: 'HTML3D 视图' })).toBeNull();
   });
 });
 
-describe('App 默认 HTML3D', () => {
-  it('默认进入 HTML3D 天穹', async () => {
+describe('App 默认 3D（canvas 版）', () => {
+  it('默认进入 3D 天穹', async () => {
     const { default: App } = await import('../../src/App');
     const { makeMockCtx, installCanvasMock } = await import('./helpers');
     const { ctx } = makeMockCtx();
     installCanvasMock({ ctx });
     localStorage.clear();
     render(<App />);
-    // 默认应为 HTML3D，而非 2D canvas
+    // 默认应为 3D（canvas 版 SkyHtml3D），而非 2D canvas
     expect(screen.queryByTestId('skydome-html3d')).toBeTruthy();
     expect(screen.queryByTestId('star-canvas')).toBeNull();
-    expect(screen.getByRole('switch', { name: 'HTML3D 视图' }).getAttribute('aria-checked')).toBe('true');
+    expect(screen.getByRole('switch', { name: '3D 视图' }).getAttribute('aria-checked')).toBe('true');
   });
 });
