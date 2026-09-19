@@ -3,7 +3,7 @@ import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { render, screen, cleanup, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SettingsDialog, validateView } from '../../src/components/SettingsDialog';
-import { CITIES, findCity } from '../../src/lib/cities';
+import { CITIES, findCity } from '@starry/sky-core/lib/cities';
 
 afterEach(cleanup);
 

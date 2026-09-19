@@ -1,6 +1,6 @@
 // tests/unit/sky-html3d.test.ts
 import { describe, it, expect } from 'vitest';
-import { projectHtml3D, silhouetteShapes, directionLabels } from '../../src/lib/sky-html3d';
+import { projectHtml3D, silhouetteShapes, directionLabels } from '@starry/sky-core/lib/sky-html3d';
 
 describe('projectHtml3D', () => {
   it('正前方星落屏幕中心', () => {

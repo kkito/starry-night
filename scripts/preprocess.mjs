@@ -1,8 +1,8 @@
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 
 const MAG_LIMIT = 5.0;
-const raw = JSON.parse(readFileSync('data/raw/stars.6.json', 'utf8'));
-const names = JSON.parse(readFileSync('data/raw/starnames.json', 'utf8'));
+const raw = JSON.parse(readFileSync('packages/sky-core/data/raw/stars.6.json', 'utf8'));
+const names = JSON.parse(readFileSync('packages/sky-core/data/raw/starnames.json', 'utf8'));
 const stars = [];
 let skipped = 0;
 const seenIds = new Set();
@@ -37,7 +37,7 @@ raw.features.forEach((f, i) => {
 
 mkdirSync('data', { recursive: true });
 writeFileSync(
-  'data/catalog.json',
+  'packages/sky-core/data/catalog.json',
   JSON.stringify(
     { source: 'd3-celestial stars.6.json', magLimit: MAG_LIMIT, generated: new Date().toISOString(), count: stars.length, skipped, stars },
     null,

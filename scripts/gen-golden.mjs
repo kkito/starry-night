@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import * as A from 'astronomy-engine';
 
-const cat = JSON.parse(readFileSync('data/catalog.json', 'utf8'));
+const cat = JSON.parse(readFileSync('packages/sky-core/data/catalog.json', 'utf8'));
 const PICK = ['Sirius', 'Canopus', 'Rigil Kentaurus', 'Polaris', 'Vega', 'Betelgeuse', 'Aldebaran', 'Fomalhaut'];
 const stars = PICK.map((name) => {
   const s = cat.stars.find((x) => x.name === name);

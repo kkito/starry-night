@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { computeSky } from '../../../src/core/sky';
-import { buildDrawList } from '../../../src/lib/drawlist';
+import { computeSky } from '@starry/sky-core/core/sky';
+import { buildDrawList } from '@starry/sky-core/lib/drawlist';
 
 const DATE = new Date('2026-09-08T20:00:00+08:00');
 

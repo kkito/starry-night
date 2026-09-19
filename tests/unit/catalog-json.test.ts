@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 
 describe('data/catalog.json', () => {
-  const cat = JSON.parse(readFileSync(new URL('../../data/catalog.json', import.meta.url), 'utf8'));
+  const cat = JSON.parse(readFileSync(new URL('../../packages/sky-core/data/catalog.json', import.meta.url), 'utf8'));
 
   it('结构完整', () => {
     expect(cat.source).toContain('stars.6.json');

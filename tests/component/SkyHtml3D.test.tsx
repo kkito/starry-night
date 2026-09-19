@@ -3,7 +3,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
 import { SkyHtml3D } from '../../src/components/SkyHtml3D';
-import type { DrawStar } from '../../src/lib/drawlist';
+import type { DrawStar } from '@starry/sky-core/lib/drawlist';
 
 afterEach(cleanup);
 

@@ -1,4 +1,4 @@
-import { findCity } from '../../../src/lib/cities';
+import { findCity } from '@starry/sky-core/lib/cities';
 
 // I2 城市选择映射：只读引用根 lib/cities 的 findCity，不 fork 城市表。
 export function pickCityCoords(name: string): { lat: number; lon: number } | undefined {

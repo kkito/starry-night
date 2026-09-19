@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { magToRadius, bvToColor, buildDrawList, type StarWithBv } from '../../src/lib/drawlist';
+import { magToRadius, bvToColor, buildDrawList, type StarWithBv } from '@starry/sky-core/lib/drawlist';
 
 const star = (over: Partial<StarWithBv>): StarWithBv => ({
   id: 's1', ra: 0, dec: 0, az: 0, alt: 45, mag: 2, ...over,

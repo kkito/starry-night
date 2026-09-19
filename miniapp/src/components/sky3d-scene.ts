@@ -1,8 +1,8 @@
 // Sky3D 3D 场景纯数据层：Web 版 Sky3D.tsx 的 buildTrack / ring / 方位线几何提炼。
 // 与 three 对象解耦（r108 adapter 与 H5 版 three 共用），可单测；
 // adapter 与 H5 组件各自把 Vec3 点位包成对应 three 的 Vector3。
-import { altAzToVec, type DomeVec } from '../../../src/lib/dome';
-import type { StarTrack } from '../../../src/lib/track';
+import { altAzToVec, type DomeVec } from '@starry/sky-core/lib/dome';
+import type { StarTrack } from '@starry/sky-core/lib/track';
 
 export interface TrackSeg { a: DomeVec; b: DomeVec }
 

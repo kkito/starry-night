@@ -2,13 +2,13 @@ import { useState } from 'react';
 import { View, Text, Input, Button } from '@tarojs/components';
 import * as Taro from '@tarojs/taro';
 import { filterTableStars, formatStarMag, belowHorizonNote } from '../../lib/table-format';
-import { computeSky } from '../../../../src/core/sky';
-import { computeSolarBodies } from '../../../../src/core/ephemeris';
+import { computeSky } from '@starry/sky-core/core/sky';
+import { computeSolarBodies } from '@starry/sky-core/core/ephemeris';
 import { toLocalInput, type ViewParams } from '../../../../src/components/SettingsDialog';
 import { loadViewPrefs } from '../../adapters/prefs';
 import { SELECTED_KEY } from '../../lib/selected';
 import { Page, PageTitle, Section } from '../../components/ui';
-import { COLORS, FONTS } from '../../../../src/lib/tokens';
+import { COLORS, FONTS } from '@starry/sky-core/lib/tokens';
 
 // 默认 viewMode 跟 Web 版一致为 '3d'（根 App.tsx DEFAULT_VIEW）。
 const DEFAULT_VIEW: ViewParams = { lat: 31.2304, lon: 121.4737, date: toLocalInput(new Date()), timeMode: 'live', topN: 50, aspect: 'auto', showSolar: true, mirror: false, shape: 'ellipse', viewMode: '3d' };

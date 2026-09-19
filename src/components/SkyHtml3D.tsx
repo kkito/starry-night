@@ -1,9 +1,9 @@
 // src/components/SkyHtml3D.tsx
 import { useEffect, useRef, useState } from 'react';
-import { pointSizeFor } from '../lib/dome';
-import { COLORS } from '../lib/tokens';
+import { pointSizeFor } from '@starry/sky-core/lib/dome';
+import { COLORS } from '@starry/sky-core/lib/tokens';
 import { StarTooltip } from './StarTooltip';
-import { projectHtml3D, silhouetteShapes, silhouettePx, directionLabels } from '../lib/sky-html3d';
+import { projectHtml3D, silhouetteShapes, silhouettePx, directionLabels } from '@starry/sky-core/lib/sky-html3d';
 import type { Sky3DProps } from './Sky3D';
 
 const ALT_RINGS = [10, 20, 30, 45, 60];

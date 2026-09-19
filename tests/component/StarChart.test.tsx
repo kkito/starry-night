@@ -3,8 +3,8 @@ import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { drawSky } from '../../src/components/StarChart';
 import { StarChart } from '../../src/components/StarChart';
-import { buildDrawList, type StarWithBv } from '../../src/lib/drawlist';
-import type { StarTrack } from '../../src/lib/track';
+import { buildDrawList, type StarWithBv } from '@starry/sky-core/lib/drawlist';
+import type { StarTrack } from '@starry/sky-core/lib/track';
 import { makeMockCtx, installCanvasMock, type RecordedCall } from './helpers';
 
 const star = (over: Partial<StarWithBv>): StarWithBv => ({ id: 's', ra: 0, dec: 0, az: 0, alt: 90, mag: 0, ...over });

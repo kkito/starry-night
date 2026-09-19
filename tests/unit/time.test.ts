@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { dateToJD, gmstDeg, norm360, centuriesSinceJ2000, lastDeg } from '../../src/core/time';
+import { dateToJD, gmstDeg, norm360, centuriesSinceJ2000, lastDeg } from '@starry/sky-core/core/time';
 
 describe('time', () => {
   it('J2000.0 = 2451545.0', () => {

@@ -3,7 +3,7 @@ import { describe, it, expect, afterEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { StarTableDialog } from '../../src/components/StarTableDialog';
-import type { SkyStar } from '../../src/core/sky';
+import type { SkyStar } from '@starry/sky-core/core/sky';
 
 afterEach(cleanup);
 

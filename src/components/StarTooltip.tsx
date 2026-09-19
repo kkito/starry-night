@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState } from 'react';
-import { COLORS, FONTS } from '../lib/tokens';
+import { COLORS, FONTS } from '@starry/sky-core/lib/tokens';
 
 /** Tooltip 信息：恒星或太阳系天体共有的展示字段。 */
 export interface TooltipStar {

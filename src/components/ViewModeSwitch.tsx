@@ -1,5 +1,5 @@
 import type { ViewMode } from './SettingsDialog';
-import { COLORS, FONTS } from '../lib/tokens';
+import { COLORS, FONTS } from '@starry/sky-core/lib/tokens';
 
 export function ViewModeSwitch({ value, onChange }: { value: ViewMode; onChange: (m: ViewMode) => void }) {
   const is3d = value === '3d';

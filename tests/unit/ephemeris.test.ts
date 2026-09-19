@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect } from 'vitest';
-import { computeSolarBodies, SOLAR_BODIES } from '../../src/core/ephemeris';
+import { computeSolarBodies, SOLAR_BODIES } from '@starry/sky-core/core/ephemeris';
 
 // 参考点：北京（39.9N, 116.4E）
 const OPTS = { lat: 39.9, lon: 116.4, date: new Date('2026-09-06T00:00:00Z') };

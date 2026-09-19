@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { azLineEnds, ringPoints, splitTrackSegments } from '../sky3d-scene';
-import type { StarTrack } from '../../../../src/lib/track';
+import type { StarTrack } from '@starry/sky-core/lib/track';
 
 const track = (alts: number[], pastCount: number): StarTrack => ({
   id: 's1',

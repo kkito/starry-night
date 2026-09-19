@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { computeSky } from '../../../src/core/sky';
+import { computeSky } from '@starry/sky-core/core/sky';
 import { loadSharedCatalog } from '../shared/catalog';
 
 describe('shared core in miniapp', () => {

@@ -1,7 +1,7 @@
 import { useState, type CSSProperties } from 'react';
-import type { SkyStar } from '../core/sky';
-import type { SolarBody } from '../core/ephemeris';
-import { COLORS, FONTS, buttonStyle } from '../lib/tokens';
+import type { SkyStar } from '@starry/sky-core/core/sky';
+import type { SolarBody } from '@starry/sky-core/core/ephemeris';
+import { COLORS, FONTS, buttonStyle } from '@starry/sky-core/lib/tokens';
 
 export function StarTableDialog({ open, stars, solar, onClose }: { open: boolean; stars: SkyStar[]; solar?: SolarBody[]; onClose: () => void }) {
   const [q, setQ] = useState('');

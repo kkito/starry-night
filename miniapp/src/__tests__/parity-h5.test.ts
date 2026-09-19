@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { computeSky } from '../../../src/core/sky';
+import { computeSky } from '@starry/sky-core/core/sky';
 import { loadSharedCatalog } from '../shared/catalog';
 
 /**
@@ -43,7 +43,7 @@ describe('parity miniapp vs web golden (computeSky)', () => {
   }
 
   it('首星位置与 golden 真值一致（5角秒内）', async () => {
-    const { computeStarPosition } = await import('../../../src/core/sky');
+    const { computeStarPosition } = await import('@starry/sky-core/core/sky');
     const byId = new Map(loadSharedCatalog().map((s) => [s.id, s]));
     const ARCSEC = 1 / 3600;
     const sample = golden.cases.slice(0, 8);

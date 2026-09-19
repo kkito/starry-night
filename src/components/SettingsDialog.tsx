@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent, type CSSProperties } from 'react';
-import { CITIES, findCity } from '../lib/cities';
+import { CITIES, findCity } from '@starry/sky-core/lib/cities';
 import { getCurrentPosition } from '../lib/geolocation';
-import { COLORS, FONTS, buttonStyle } from '../lib/tokens';
+import { COLORS, FONTS, buttonStyle } from '@starry/sky-core/lib/tokens';
 
 export type AspectPref = 'auto' | 'landscape' | 'portrait';
 export type ShapePref = 'ellipse' | 'circle';

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   unitFromRaDec, raDecFromUnit, meanObliquityDeg, precessionMatrix,
   raDecToAltAz, refractionDeg, j2000ToApparent, annualAberrationEclVecArcsec,
-} from '../../src/core/transforms';
+} from '@starry/sky-core/core/transforms';
 
 describe('transforms', () => {
   it('RA/Dec ↔ 单位向量往返一致', () => {

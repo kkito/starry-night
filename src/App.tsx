@@ -1,8 +1,8 @@
 import { useMemo, useState, useEffect, type CSSProperties } from 'react';
-import { computeSky, computeSolarBodies, loadCatalog } from './core';
-import { buildDrawList, buildSolarDrawList } from './lib/drawlist';
-import { computeTrackAround } from './lib/track';
-import { zhName } from './lib/names';
+import { computeSky, computeSolarBodies, loadCatalog } from '@starry/sky-core/core';
+import { buildDrawList, buildSolarDrawList } from '@starry/sky-core/lib/drawlist';
+import { computeTrackAround } from '@starry/sky-core/lib/track';
+import { zhName } from '@starry/sky-core/lib/names';
 import { StarChart, CANVAS_MARGIN, useViewportSize } from './components/StarChart';
 import { Sky3D } from './components/Sky3D';
 import { SkyHtml3D } from './components/SkyHtml3D';
@@ -10,7 +10,7 @@ import { SettingsDialog, toLocalInput, type ViewParams } from './components/Sett
 import { ViewModeSwitch } from './components/ViewModeSwitch';
 import { StarTableDialog } from './components/StarTableDialog';
 import { loadViewPrefs, saveViewPrefs } from './lib/prefs';
-import { COLORS, FONTS } from './lib/tokens';
+import { COLORS, FONTS } from '@starry/sky-core/lib/tokens';
 
 const ASPECT_RATIO = { landscape: 16 / 9, portrait: 9 / 16 } as const;
 

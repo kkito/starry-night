@@ -1,4 +1,4 @@
-import { loadCatalog, type CatalogStar } from '../../../src/core/catalog';
+import { loadCatalog, type CatalogStar } from '@starry/sky-core/core/catalog';
 
 /**
  * 共享星表的唯一入口（miniapp 内后续任务统一复用）。

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { belowHorizonNote, filterTableStars, formatStarMag } from '../../lib/table-format';
-import type { SkyStar } from '../../../../src/core/sky';
+import type { SkyStar } from '@starry/sky-core/core/sky';
 
 const rows: SkyStar[] = [
   { id: 'a', name: '织女星', nameEn: 'Vega', ra: 0, dec: 0, az: 10, alt: 20, mag: 0.03 },

@@ -3,5 +3,5 @@
   "compilerOptions": {
     "types": ["vite/client", "node", "@tarojs/taro"]
   },
-  "include": ["src", "../src/core", "../src/lib", "../data"]
+  "include": ["src"]
 }

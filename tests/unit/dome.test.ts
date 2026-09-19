@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { altAzToVec, pointSizeFor } from '../../src/lib/dome';
-import { computeTrackAround } from '../../src/lib/track';
-import { magToRadius, solarRadius } from '../../src/lib/drawlist';
+import { altAzToVec, pointSizeFor } from '@starry/sky-core/lib/dome';
+import { computeTrackAround } from '@starry/sky-core/lib/track';
+import { magToRadius, solarRadius } from '@starry/sky-core/lib/drawlist';
 
 describe('altAzToVec（北=-z、南=+z、东=+x、天顶=+y）', () => {
   const R = 400;

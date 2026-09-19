@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { zhName } from '../../src/lib/names';
-import { loadCatalog } from '../../src/core/catalog';
+import { zhName } from '@starry/sky-core/lib/names';
+import { loadCatalog } from '@starry/sky-core/core/catalog';
 
 describe('zhName（西文名 → IAU 中文译名）', () => {
   it('知名恒星', () => {

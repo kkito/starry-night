@@ -7,7 +7,7 @@ const read = (p: string) => fs.readFileSync(path.resolve(__dirname, p), 'utf8');
 describe('miniapp UI 梳理（tokens 对齐 + testid 不破）', () => {
   it('基础组件存在且复用仓根 tokens', () => {
     const ui = read('../components/ui.tsx');
-    expect(ui).toContain("from '../../../src/lib/tokens'");
+    expect(ui).toContain("from '@starry/sky-core/lib/tokens'");
     expect(ui).toContain('COLORS');
     for (const name of ['Page', 'Section', 'FieldRow', 'TopBar', 'NavLink', 'StatusBar']) {
       expect(ui, name).toContain(`export function ${name}`);

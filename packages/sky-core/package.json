@@ -1,0 +1,13 @@
+{
+  "name": "@starry/sky-core",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./core": "./src/core/index.ts",
+    "./*": "./src/*.ts"
+  },
+  "dependencies": {
+    "astronomy-engine": "^2.1.19"
+  }
+}

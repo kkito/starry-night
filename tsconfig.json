@@ -11,7 +11,8 @@
     "isolatedModules": true,
     "skipLibCheck": true,
     "types": ["vite/client", "node"],
-    "noEmit": true
+    "noEmit": true,
+    "paths": { "@starry/sky-core/*": ["./packages/sky-core/src/*"] }
   },
-  "include": ["src", "tests"]
+  "include": ["src", "tests", "packages/sky-core/src"]
 }

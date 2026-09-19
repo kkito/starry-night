@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState, type MouseEvent } from 'react';
-import { ALT_RINGS, AZ_SPOKES, AZ_SPOKE_LABELS, projectAltAz, zenithFraction } from '../lib/project';
-import type { DrawStar } from '../lib/drawlist';
-import type { StarTrack } from '../lib/track';
+import { ALT_RINGS, AZ_SPOKES, AZ_SPOKE_LABELS, projectAltAz, zenithFraction } from '@starry/sky-core/lib/project';
+import type { DrawStar } from '@starry/sky-core/lib/drawlist';
+import type { StarTrack } from '@starry/sky-core/lib/track';
 import { StarTooltip } from './StarTooltip';
-import { COLORS, FONTS } from '../lib/tokens';
+import { COLORS, FONTS } from '@starry/sky-core/lib/tokens';
 
 export type SketchCtx = Pick<
   CanvasRenderingContext2D,

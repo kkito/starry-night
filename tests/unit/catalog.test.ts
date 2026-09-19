@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { loadCatalog } from '../../src/core/catalog';
+import { loadCatalog } from '@starry/sky-core/core/catalog';
 
 describe('loadCatalog', () => {
   it('默认裁剪到 5.0 等，数量在 1200–2200 之间', () => {

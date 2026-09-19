@@ -1,4 +1,4 @@
-import type { SkyStar } from '../../../src/core/sky';
+import type { SkyStar } from '@starry/sky-core/core/sky';
 
 /** 与 Web 版 StarTableDialog 一致的过滤：名称/id + nameEn（大小写不敏感）。 */
 export function filterTableStars(stars: SkyStar[], q: string): SkyStar[] {

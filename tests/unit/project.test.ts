@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { projectAltAz, zenithFraction, ALT_RINGS, AZ_SPOKES, AZ_SPOKE_LABELS } from '../../src/lib/project';
+import { projectAltAz, zenithFraction, ALT_RINGS, AZ_SPOKES, AZ_SPOKE_LABELS } from '@starry/sky-core/lib/project';
 
 describe('projectAltAz（仰视：N 上、E 左；椭圆撑满视口）', () => {
   it('天顶在中心', () => {

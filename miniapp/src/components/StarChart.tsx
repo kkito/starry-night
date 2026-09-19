@@ -4,8 +4,8 @@ import { Canvas, View, Text } from '@tarojs/components';
 // 同步规则：drawSky 逻辑以仓根 src/components/StarChart.tsx 为准，此处不分叉复制；
 // 若 Web 版 SketchCtx/drawSky 签名变更，此处 import 会随类型检查失败而显式暴露。
 import { drawSky } from '../../../src/components/StarChart';
-import type { DrawStar } from '../../../src/lib/drawlist';
-import type { StarTrack } from '../../../src/lib/track';
+import type { DrawStar } from '@starry/sky-core/lib/drawlist';
+import type { StarTrack } from '@starry/sky-core/lib/track';
 import { getCanvasRect, getGLCanvasNode, nextFrame } from '../web-env';
 
 export const HIT_PX = 8;

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { View, Text, Input, Picker, Switch, Slider, Button } from '@tarojs/components';
 import * as Taro from '@tarojs/taro';
 import { toLocalInput, validateView, TOP_N_MIN, TOP_N_MAX, type ViewParams } from '../../../../src/components/SettingsDialog';
-import { CITIES } from '../../../../src/lib/cities';
+import { CITIES } from '@starry/sky-core/lib/cities';
 import { pickCityCoords } from '../../lib/city-pick';
 import { getCurrentPosition } from '../../adapters/geolocation';
 import { loadViewPrefs, saveViewPrefs } from '../../adapters/prefs';

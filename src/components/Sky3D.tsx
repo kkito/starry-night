@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
-import { altAzToVec, DOME_R, pointSizeFor } from '../lib/dome';
-import type { DrawStar } from '../lib/drawlist';
-import type { StarTrack } from '../lib/track';
+import { altAzToVec, DOME_R, pointSizeFor } from '@starry/sky-core/lib/dome';
+import type { DrawStar } from '@starry/sky-core/lib/drawlist';
+import type { StarTrack } from '@starry/sky-core/lib/track';
 import { StarTooltip } from './StarTooltip';
-import { COLORS } from '../lib/tokens';
+import { COLORS } from '@starry/sky-core/lib/tokens';
 
 export interface Sky3DProps {
   stars: DrawStar[];

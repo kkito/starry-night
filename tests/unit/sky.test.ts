@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { computeSky, computeTrack, computeStarPosition } from '../../src/core/sky';
-import { loadCatalog } from '../../src/core/catalog';
+import { computeSky, computeTrack, computeStarPosition } from '@starry/sky-core/core/sky';
+import { loadCatalog } from '@starry/sky-core/core/catalog';
 
 const BJ = { lat: 39.9, lon: 116.4 };
 

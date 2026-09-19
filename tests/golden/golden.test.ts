@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { computeStarPosition } from '../../src/core/sky';
-import { loadCatalog } from '../../src/core/catalog';
+import { computeStarPosition } from '@starry/sky-core/core/sky';
+import { loadCatalog } from '@starry/sky-core/core/catalog';
 
 const golden = JSON.parse(readFileSync(new URL('./golden.json', import.meta.url), 'utf8'));
 const byId = new Map(loadCatalog().map((s) => [s.id, s]));

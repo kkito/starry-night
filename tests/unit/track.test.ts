@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { computeTrackAround } from '../../src/lib/track';
-import { computeStarPosition } from '../../src/core/sky';
-import { loadCatalog } from '../../src/core/catalog';
-import { projectAltAz } from '../../src/lib/project';
+import { computeTrackAround } from '@starry/sky-core/lib/track';
+import { computeStarPosition } from '@starry/sky-core/core/sky';
+import { loadCatalog } from '@starry/sky-core/core/catalog';
+import { projectAltAz } from '@starry/sky-core/lib/project';
 
 const opts = { lat: 31.2304, lon: 121.4737, rx: 270, ry: 270 };
 

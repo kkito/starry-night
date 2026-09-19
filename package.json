@@ -29,6 +29,7 @@
   },
   "packageManager": "pnpm@11.7.0",
   "dependencies": {
+    "@starry/sky-core": "workspace:*",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "three": "^0.185.1"

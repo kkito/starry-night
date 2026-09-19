@@ -1,6 +1,6 @@
 import { View, Text } from '@tarojs/components';
 import type { ReactNode } from 'react';
-import { COLORS, FONTS } from '../../../src/lib/tokens';
+import { COLORS, FONTS } from '@starry/sky-core/lib/tokens';
 
 /** 小程序原生 UI 基础组件：对齐仓根 tokens（COLORS/FONTS），收敛各页散落的内联样式。
  * 导航保持三页跳转不变，只统一样式层；所有 data-testid 保持原样，单测不破。

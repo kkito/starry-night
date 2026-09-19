@@ -6,10 +6,10 @@ import { useEffect, useRef, useState } from 'react';
 import { Canvas, View, Text } from '@tarojs/components';
 import { getCanvasRect, getGLCanvasNode, getViewport, makeOffscreen } from '../web-env';
 import { dragDeltaToYawPitch, clampPitch, pinchDistToFov, toCanvasPoint, touchDist, isTapGesture, PICK_PX_TOL, pickToleranceWorld, pickBestStarIndex } from './sky3d-math';
-import type { DrawStar } from '../../../src/lib/drawlist';
-import type { StarTrack } from '../../../src/lib/track';
-import { COLORS } from '../../../src/lib/tokens';
-import { altAzToVec, pointSizeFor } from '../../../src/lib/dome';
+import type { DrawStar } from '@starry/sky-core/lib/drawlist';
+import type { StarTrack } from '@starry/sky-core/lib/track';
+import { COLORS } from '@starry/sky-core/lib/tokens';
+import { altAzToVec, pointSizeFor } from '@starry/sky-core/lib/dome';
 import { azLineEnds, ringPoints, splitTrackSegments } from './sky3d-scene';
 
 // adapter 是官方 threejs-miniprogram UMD 包：factory 头部直接写裸 exports 对象，
