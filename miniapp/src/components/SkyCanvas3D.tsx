@@ -3,8 +3,7 @@
 // 手势状态机沿用旧 Sky3DAdapter（a22767a）的单指拖拽/双指 pinch/tap 点选，
 // 系数集中在 ./sky3d-math 纯函数（与 web 版一致）。
 import { useEffect, useRef, useState } from 'react';
-import { Canvas, View } from '@tarojs/components';
-import { createSelectorQuery } from '@tarojs/taro';
+import { Canvas, View, Text } from '@tarojs/components';
 import { drawSkyScene } from '@starry/sky-core/lib/sky-scene';
 import type { DrawStar } from '@starry/sky-core/lib/drawlist';
 import type { StarTrack } from '@starry/sky-core/lib/track';
@@ -13,7 +12,7 @@ import {
   dragDeltaToYawPitch, clampPitch, pinchDistToFov, toCanvasPoint, touchDist,
   isTapGesture, PICK_PX_TOL, pickBestStarIndex,
 } from './sky3d-math';
-import { nextFrame, clampPixelRatio, getViewport } from '../web-env';
+import { nextFrame, clampPixelRatio, getViewport, getCanvasRect, getGLCanvasNode } from '../web-env';
 
 export interface Sky3DProps {
   stars: DrawStar[];
@@ -34,6 +33,8 @@ export function SkyCanvas3D({ stars, track, selectedId, onSelect }: Sky3DProps) 
   const rectRef = useRef<{ left: number; top: number } | null>(null);
   const touchRef = useRef<{ lastX: number; lastY: number; pinchD: number; moved: boolean; startX: number; startY: number } | null>(null);
   const [, force] = useState(0);
+  // 初始化诊断（真机验收后可删）：初始化卡住/失败时上屏，不再静默黑屏
+  const [dbg, setDbg] = useState<{ ready: boolean; w: number; h: number; dpr: number; attempts: number; err: string | null } | null>(null);
 
   const redraw = () => {
     const rt = canvasRef.current;
@@ -49,38 +50,43 @@ export function SkyCanvas3D({ stars, track, selectedId, onSelect }: Sky3DProps) 
 
   useEffect(() => {
     let alive = true;
+    let attempt = 0;
     const vp = getViewport();
-    // weapp 的 canvas node 晚于 effect 就绪（StarChart 同款坑）：未就绪就静默放弃会整屏空白，
-    // 必须重试；尺寸兜底到 getViewport，rect 缺字段/为 0 时不再算出 0。
-    const tryInit = (attempt: number) => {
+    // 取 node/rect 复用 web-env 的共享链路（StarChart 同款，weapp 按 TARO_ENV 判端）；
+    // node 晚就绪时重试有限次，最终失败落 dbg 状态上屏（不再静默黑屏）。
+    const tryInit = () => {
       if (!alive) return;
-      const query = createSelectorQuery();
-      query.select(`#${SKY3D_CANVAS_ID}`).node();
-      query.select(`#${SKY3D_CANVAS_ID}`).boundingClientRect();
-      query.exec((res: any[]) => {
-        if (!alive) return;
-        const canvas = res?.[0]?.node as HTMLCanvasElement | undefined;
-        if (!canvas) {
-          if (attempt < 30) setTimeout(() => tryInit(attempt + 1), 100 + attempt * 50);
-          return;
-        }
-        const rect = res?.[1];
-        rectRef.current = { left: rect?.left ?? 0, top: rect?.top ?? 0 };
-        // DPR 封顶 2（硬性约束），逻辑尺寸不变、物理尺寸放大；weapp 无 window.devicePixelRatio，走 getDeviceInfo
-        const dpr = clampPixelRatio(vp.pixelRatio);
-        const w = rect?.width || vp.width;
-        const h = rect?.height || vp.height;
-        canvas.width = w * dpr;
-        canvas.height = h * dpr;
-        // weapp 原生 node 没有 DOM .style：物理尺寸放 node，逻辑尺寸靠 Canvas 元素 style 撑
-        if (canvas.style) {
-          canvas.style.width = `${w}px`;
-          canvas.style.height = `${h}px`;
-        }
-        canvas.getContext('2d')?.scale(dpr, dpr);
-        canvasRef.current = { canvas, w, h };
-        redraw();
-      });
+      getGLCanvasNode(SKY3D_CANVAS_ID)
+        .then((canvas: any) => {
+          if (!alive) return;
+          return getCanvasRect(SKY3D_CANVAS_ID).then((r) => {
+            if (!alive) return;
+            rectRef.current = r;
+            // DPR 封顶 2（硬性约束）：物理尺寸放大 node，逻辑尺寸走 Canvas 元素 style
+            const dpr = clampPixelRatio(vp.pixelRatio);
+            const w = vp.width;
+            const h = vp.height;
+            canvas.width = w * dpr;
+            canvas.height = h * dpr;
+            if (canvas.style) {
+              canvas.style.width = `${w}px`;
+              canvas.style.height = `${h}px`;
+            }
+            canvas.getContext('2d')?.scale(dpr, dpr);
+            canvasRef.current = { canvas, w, h };
+            setDbg({ ready: true, w, h, dpr, attempts: attempt + 1, err: null });
+            redraw();
+          });
+        })
+        .catch((err: unknown) => {
+          if (!alive) return;
+          if (attempt < 30) {
+            attempt += 1;
+            setTimeout(tryInit, 100 + attempt * 50);
+          } else {
+            setDbg({ ready: false, w: 0, h: 0, dpr: 0, attempts: attempt + 1, err: String(err) });
+          }
+        });
     };
     tryInit(0);
     return () => { alive = false; canvasRef.current = null; };
@@ -196,6 +202,11 @@ export function SkyCanvas3D({ stars, track, selectedId, onSelect }: Sky3DProps) 
         >
           <StarTooltip star={selected} x={selPos.x} y={selPos.y} />
         </View>
+      )}
+      {dbg && !dbg.ready && (
+        <Text data-testid='sky3d-debug' style={{ position: 'absolute', left: 8, top: 8, color: '#e8b45a', fontSize: 11 }}>
+          3D init: try{dbg.attempts} err={dbg.err ?? '…'}
+        </Text>
       )}
     </View>
   );

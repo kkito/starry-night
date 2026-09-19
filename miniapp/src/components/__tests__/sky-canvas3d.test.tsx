@@ -33,24 +33,30 @@ afterEach(() => {
   currentQueryFactory = () => mockSelectorQuery();
 });
 
+// web-env 按 TARO_ENV 判端：组件测试走 weapp 分支（selectorQuery 链路）
+process.env.TARO_ENV = 'weapp';
+
 function makeWeappCanvasNode() {
   // weapp 的 canvas 2d node 是原生节点：无 DOM .style（回归用例——曾因 node.style 未判空崩溃）
   return { width: 0, height: 0, getContext: () => ({ scale: () => {} }) };
 }
 
-function mockSelectorQuery() {
-  const api: any = {
-    select: () => api,
-    node: () => api,
-    boundingClientRect: () => api,
-    exec: (cb: (res: any[]) => void) => {
-      cb([
-        { node: makeWeappCanvasNode() },
-        { left: 0, top: 0, width: 375, height: 500 },
-      ]);
-    },
+/** 仿真实 selectorQuery 回调式 API：node(cb)/boundingClientRect(cb) 注册回调，exec() 触发。 */
+function makeQueryApi(result: { node: any; rect: any }) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const api: any = { nodeCb: null as any, rectCb: null as any };
+  api.select = () => api;
+  api.node = (cb: any) => { api.nodeCb = cb; return api; };
+  api.boundingClientRect = (cb: any) => { api.rectCb = cb; return api; };
+  api.exec = () => {
+    api.nodeCb?.({ node: result.node });
+    api.rectCb?.(result.rect);
   };
   return api;
+}
+
+function mockSelectorQuery() {
+  return makeQueryApi({ node: makeWeappCanvasNode(), rect: { left: 0, top: 0, width: 375, height: 500 } });
 }
 
 /** 前 times 次 exec 返回 null node（真机 canvas 晚就绪场景），之后就绪。
@@ -58,17 +64,12 @@ function mockSelectorQuery() {
 function makeNotReadyFactory(times: number) {
   let calls = 0;
   return () => {
-    const api: any = {
-      select: () => api,
-      node: () => api,
-      boundingClientRect: () => api,
-      exec: (cb: (res: any[]) => void) => {
-        calls += 1;
-        if (calls <= times) cb([{ node: null }, null]);
-        else cb([{ node: makeWeappCanvasNode() }, { left: 0, top: 0, width: 375, height: 500 }]);
-      },
-    };
-    return api;
+    calls += 1;
+    const ready = calls > times;
+    return makeQueryApi({
+      node: ready ? makeWeappCanvasNode() : null,
+      rect: { left: 0, top: 0, width: 375, height: 500 },
+    });
   };
 }
 
@@ -92,8 +93,10 @@ describe('SkyCanvas3D', () => {
     await new Promise((r) => setTimeout(r, 700));
     expect(drawSkyScene).toHaveBeenCalled();
   });
-  it('选中星显示 tooltip', () => {
+  it('选中星显示 tooltip', async () => {
     render(<SkyCanvas3D stars={[star('s1', 180, 25)]} track={null} selectedId="s1" onSelect={vi.fn()} />);
-    expect(screen.getByTestId('selected-tooltip')).toBeTruthy();
+    // 初始化经 promise 链（getGLCanvasNode → getCanvasRect → redraw），等微任务落地
+    await screen.findByTestId('selected-tooltip');
+    expect(true).toBe(true);
   });
 });
