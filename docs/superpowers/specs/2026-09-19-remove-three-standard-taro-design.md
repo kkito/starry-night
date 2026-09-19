@@ -58,7 +58,7 @@ web 与小程序彻底移除 three.js：web 端 3D 由 canvas 版（现 SkyHtml3
   `src/vendor/threejs-miniprogram.js`、`three-stub.js`、`scripts/copy-vendor-weapp.mjs`、three 依赖。
 - 测试：纯函数测试平移（sky3d-math/pick、city-pick、selected、table-format、canvas-size、prefs、geolocation），
   three 相关（sky3d-scene、scaffold/bundle-size 锁 vendor 的用例）删除；体积门禁保留并适配新结构。
-- 验收：`pnpm test` 全绿；`pnpm build:weapp` 成功 + 体积门禁通过（预期显著小于旧 124K）；
+- 验收：`pnpm test` 全绿；`pnpm build:weapp` 成功 + 体积门禁通过（门禁 ≤2MB；Taro 4 runtime 壳约 430KB，业务产物显著小于旧 three 方案）；
   真机手势/帧率由用户预览验收。
 
 ## 风险与对策

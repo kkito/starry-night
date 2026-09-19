@@ -281,7 +281,7 @@ Expected: 全绿（web 339−8 + miniapp 平移与新增用例）。
 ```bash
 cd miniapp && pnpm build:weapp && node scripts/check-size.mjs
 ```
-Expected: 构建成功；门禁通过且显著小于旧 124K（无 three、无 vendor）。
+Expected: 构建成功；门禁通过（实测主包 597.6KB，Taro 4 壳约 430KB，无 three/vendor）。
 
 - [ ] **Step 4: Commit**
 

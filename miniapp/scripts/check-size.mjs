@@ -12,7 +12,8 @@ import { join, relative } from 'node:path';
 const MAIN_LIMIT = 2 * 1024 * 1024; // 2MB（微信主包上限）
 
 function parseArgs(argv) {
-  const out = { dir: 'miniapp/dist', limit: MAIN_LIMIT };
+  // 默认目录相对脚本自身定位（miniapp/dist），使 postbuild 钩子与根目录手跑均可
+  const out = { dir: join(import.meta.dirname, '..', 'dist'), limit: MAIN_LIMIT };
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--dir') out.dir = argv[++i];
     if (argv[i] === '--limit') out.limit = Number(argv[++i]);
@@ -29,10 +30,20 @@ function walk(dir, acc = []) {
   return acc;
 }
 
+function hasWeappOutput(dir) {
+  // weapp 构建产物指纹：app.js + app.json 缺一即视为"非 weapp 产物"
+  return existsSync(join(dir, 'app.js')) && existsSync(join(dir, 'app.json'));
+}
+
 function main() {
   const { dir, limit } = parseArgs(process.argv.slice(2));
-  // weapp 构建产物指纹：app.js + app.json 缺一即视为"非 weapp 产物"
-  if (!existsSync(join(dir, 'app.js')) || !existsSync(join(dir, 'app.json'))) {
+  // webpack 报 Compiled successfully 后 dist 落盘有延迟，等 3s 消除连跑竞态
+  if (!hasWeappOutput(dir)) {
+    for (let waited = 0; waited < 3000 && !hasWeappOutput(dir); waited += 200) {
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 200);
+    }
+  }
+  if (!hasWeappOutput(dir)) {
     console.error(`[check-size] FAIL: ${dir} 下缺少 weapp 构建产物（app.js/app.json），请先跑 taro build --type weapp`);
     process.exit(1);
   }
