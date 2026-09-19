@@ -93,6 +93,14 @@ describe('SkyCanvas3D', () => {
     await new Promise((r) => setTimeout(r, 700));
     expect(drawSkyScene).toHaveBeenCalled();
   });
+  it('初始化后 Canvas 元素为显式 px 尺寸（100% 会退回默认 300×150 致黑屏）', async () => {
+    const { container } = render(<SkyCanvas3D stars={[star('s1', 180, 25)]} track={null} selectedId={null} onSelect={vi.fn()} />);
+    const canvas = container.querySelector('canvas');
+    await vi.waitFor(() => {
+      expect(canvas?.getAttribute('style')).toContain('width: 375px');
+      expect(canvas?.getAttribute('style')).toContain('height: 667px');
+    });
+  });
   it('选中星显示 tooltip', async () => {
     render(<SkyCanvas3D stars={[star('s1', 180, 25)]} track={null} selectedId="s1" onSelect={vi.fn()} />);
     // 初始化经 promise 链（getGLCanvasNode → getCanvasRect → redraw），等微任务落地

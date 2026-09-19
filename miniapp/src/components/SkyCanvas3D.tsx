@@ -35,6 +35,9 @@ export function SkyCanvas3D({ stars, track, selectedId, onSelect }: Sky3DProps) 
   const [, force] = useState(0);
   // 初始化诊断（真机验收后可删）：初始化卡住/失败时上屏，不再静默黑屏
   const [dbg, setDbg] = useState<{ ready: boolean; w: number; h: number; dpr: number; attempts: number; err: string | null } | null>(null);
+  // Canvas 元素显式 px 尺寸（StarChart/旧 adapter 同款）：weapp 下 100% 会让原生 canvas
+  // 退回默认 300×150 并被 flex 居中，缓冲区内容被压缩进小元素而“黑屏”。
+  const [size, setSize] = useState<{ w: number; h: number } | null>(null);
 
   const redraw = () => {
     const rt = canvasRef.current;
@@ -79,6 +82,7 @@ export function SkyCanvas3D({ stars, track, selectedId, onSelect }: Sky3DProps) 
             }
             canvas.getContext('2d')?.scale(dpr, dpr);
             canvasRef.current = { canvas, w, h };
+            setSize({ w, h });
             setDbg({ ready: true, w, h, dpr, attempts: attempt + 1, err: null });
             redraw();
             console.log(`[sky3d] init done w=${w} h=${h} dpr=${dpr} stars=${dataRef.current.stars.length}`);
@@ -198,7 +202,7 @@ export function SkyCanvas3D({ stars, track, selectedId, onSelect }: Sky3DProps) 
       <Canvas
         type='2d'
         id={SKY3D_CANVAS_ID}
-        style={{ width: '100%', height: '100%' }}
+        style={{ width: size ? `${size.w}px` : '100%', height: size ? `${size.h}px` : '100%' }}
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
