@@ -21,4 +21,14 @@ describe('SkyHtml3D', () => {
     expect(screen.getByTestId('selected-tooltip')).toBeTruthy();
     expect(screen.getByTestId('star-tooltip')).toBeTruthy();
   });
+  it('tooltip 定位到选中星的投影点（正前方星应在画布中心 400,300）', () => {
+    render(<SkyHtml3D stars={[star('s1', 180, 25)]} track={null} selectedId="s1" onSelect={vi.fn()} />);
+    const tip = screen.getByTestId('selected-tooltip');
+    expect(Math.abs(Number(tip.getAttribute('data-x')) - 400)).toBeLessThan(2);
+    expect(Math.abs(Number(tip.getAttribute('data-y')) - 300)).toBeLessThan(2);
+  });
+  it('选中星转到相机背后后 tooltip 消失（与 3D 版一致）', () => {
+    render(<SkyHtml3D stars={[star('s1', 0, 25)]} track={null} selectedId="s1" onSelect={vi.fn()} />);
+    expect(screen.queryByTestId('selected-tooltip')).toBeNull();
+  });
 });
