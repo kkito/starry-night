@@ -27,6 +27,7 @@
     "webpack": "5.78.0"
   },
   "dependencies": {
+    "@starry/sky-core": "workspace:*",
     "@tarojs/components": "^3.6.40",
     "@tarojs/helper": "^3.6.40",
     "@tarojs/plugin-framework-react": "^3.6.40",

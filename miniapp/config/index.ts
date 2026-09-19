@@ -39,13 +39,17 @@ const config: UserConfigExport<'webpack5'> = {
   mini: {
     webpackChain(chain) {
       const rootSrc = path.resolve(__dirname, '..', '..', 'src');
+      const skyCoreSrc = path.resolve(__dirname, '..', '..', 'packages', 'sky-core', 'src');
       const vendorDir = path.resolve(__dirname, '..', 'src', 'vendor');
+      // sky-core exports 指向 .ts 源码：alias 到源码目录并纳入 babel 处理（同 rootSrc 的教训）。
+      chain.resolve.alias.set('@starry/sky-core', skyCoreSrc);
       // weapp 只走 Sky3DAdapter（外置 vendor）：npm three 是死代码（同页 import 的 H5 版 Sky3D.tsx
       // 引用），alias 到 stub 让它不进包（实测 593 KiB → ~100 KiB 级）。H5 构建保持真 three。
       chain.resolve.alias.set('three', path.resolve(__dirname, '..', 'three-stub.js'));
       chain.module
         .rule('script')
         .include.add(rootSrc)
+        .add(skyCoreSrc)
         .end()
         // vendor 是已打好的 ES5 包（threejs-miniprogram r108 UMD）：必须完全跳过 babel。
         // 教训：只配 noParse 不够——babel-loader 照样给它注入 transform-runtime 的
@@ -66,9 +70,13 @@ const config: UserConfigExport<'webpack5'> = {
     staticDirectory: 'static',
     webpackChain(chain) {
       const rootSrc = path.resolve(__dirname, '..', '..', 'src');
+      const skyCoreSrc = path.resolve(__dirname, '..', '..', 'packages', 'sky-core', 'src');
+      // 同 mini：sky-core 的 .ts 源码 exports 需要 alias + babel 处理。
+      chain.resolve.alias.set('@starry/sky-core', skyCoreSrc);
       chain.module
         .rule('script')
         .include.add(rootSrc)
+        .add(skyCoreSrc)
         .end();
     },
     postcss: {
