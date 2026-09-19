@@ -13,7 +13,7 @@ import {
   dragDeltaToYawPitch, clampPitch, pinchDistToFov, toCanvasPoint, touchDist,
   isTapGesture, PICK_PX_TOL, pickBestStarIndex,
 } from './sky3d-math';
-import { nextFrame, clampPixelRatio } from '../web-env';
+import { nextFrame, clampPixelRatio, getViewport } from '../web-env';
 
 export interface Sky3DProps {
   stars: DrawStar[];
@@ -49,30 +49,40 @@ export function SkyCanvas3D({ stars, track, selectedId, onSelect }: Sky3DProps) 
 
   useEffect(() => {
     let alive = true;
-    // 延迟到节点挂载后取 canvas node 与 rect（weapp 必须 selectorQuery）
-    const query = createSelectorQuery();
-    query.select(`#${SKY3D_CANVAS_ID}`).node();
-    query.select(`#${SKY3D_CANVAS_ID}`).boundingClientRect();
-    query.exec((res: any[]) => {
-      if (!alive || !res?.[0]?.node || !res[1]) return;
-      const canvas = res[0].node as HTMLCanvasElement;
-      const rect = res[1] as DOMRect;
-      rectRef.current = { left: rect.left ?? 0, top: rect.top ?? 0 };
-      // DPR 封顶 2（硬性约束），逻辑尺寸不变、物理尺寸放大
-      const dpr = clampPixelRatio(typeof window !== 'undefined' ? window.devicePixelRatio : 1);
-      const w = rect.width ?? canvas.width ?? 300;
-      const h = rect.height ?? canvas.height ?? 300;
-      canvas.width = w * dpr;
-      canvas.height = h * dpr;
-      // weapp 原生 node 没有 DOM .style：物理尺寸放 node，逻辑尺寸靠 Canvas 元素 style 撑
-      if (canvas.style) {
-        canvas.style.width = `${w}px`;
-        canvas.style.height = `${h}px`;
-      }
-      canvas.getContext('2d')?.scale(dpr, dpr);
-      canvasRef.current = { canvas, w, h };
-      redraw();
-    });
+    const vp = getViewport();
+    // weapp 的 canvas node 晚于 effect 就绪（StarChart 同款坑）：未就绪就静默放弃会整屏空白，
+    // 必须重试；尺寸兜底到 getViewport，rect 缺字段/为 0 时不再算出 0。
+    const tryInit = (attempt: number) => {
+      if (!alive) return;
+      const query = createSelectorQuery();
+      query.select(`#${SKY3D_CANVAS_ID}`).node();
+      query.select(`#${SKY3D_CANVAS_ID}`).boundingClientRect();
+      query.exec((res: any[]) => {
+        if (!alive) return;
+        const canvas = res?.[0]?.node as HTMLCanvasElement | undefined;
+        if (!canvas) {
+          if (attempt < 30) setTimeout(() => tryInit(attempt + 1), 100 + attempt * 50);
+          return;
+        }
+        const rect = res?.[1];
+        rectRef.current = { left: rect?.left ?? 0, top: rect?.top ?? 0 };
+        // DPR 封顶 2（硬性约束），逻辑尺寸不变、物理尺寸放大；weapp 无 window.devicePixelRatio，走 getDeviceInfo
+        const dpr = clampPixelRatio(vp.pixelRatio);
+        const w = rect?.width || vp.width;
+        const h = rect?.height || vp.height;
+        canvas.width = w * dpr;
+        canvas.height = h * dpr;
+        // weapp 原生 node 没有 DOM .style：物理尺寸放 node，逻辑尺寸靠 Canvas 元素 style 撑
+        if (canvas.style) {
+          canvas.style.width = `${w}px`;
+          canvas.style.height = `${h}px`;
+        }
+        canvas.getContext('2d')?.scale(dpr, dpr);
+        canvasRef.current = { canvas, w, h };
+        redraw();
+      });
+    };
+    tryInit(0);
     return () => { alive = false; canvasRef.current = null; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
