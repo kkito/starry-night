@@ -25,7 +25,7 @@ function normalize(v: Vec3): Vec3 {
 }
 
 function matMul(A: number[][], B: number[][]): number[][] {
-  return A.map((row, i) => B[0]!.map((_, j) => row[0]! * B[0]![j]! + row[1]! * B[1]![j]! + row[2]! * B[2]![j]!));
+  return A.map((row, _i) => B[0]!.map((_, j) => row[0]! * B[0]![j]! + row[1]! * B[1]![j]! + row[2]! * B[2]![j]!));
 }
 
 function matVec(M: number[][], v: Vec3): Vec3 {

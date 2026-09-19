@@ -9,8 +9,8 @@
     "noImplicitAny": false,
     "allowSyntheticDefaultImports": true,
     "outDir": "lib",
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "strictNullChecks": true,
     "sourceMap": true,
     // 不设 rootDir：paths 把 @starry/sky-core 指到包外 TS 源码，rootDir 约束会误报 TS6059（仅 noEmit 校验用）
