@@ -64,8 +64,11 @@ export function SkyCanvas3D({ stars, track, selectedId, onSelect }: Sky3DProps) 
       const h = rect.height ?? canvas.height ?? 300;
       canvas.width = w * dpr;
       canvas.height = h * dpr;
-      canvas.style!.width = `${w}px`;
-      canvas.style!.height = `${h}px`;
+      // weapp 原生 node 没有 DOM .style：物理尺寸放 node，逻辑尺寸靠 Canvas 元素 style 撑
+      if (canvas.style) {
+        canvas.style.width = `${w}px`;
+        canvas.style.height = `${h}px`;
+      }
       canvas.getContext('2d')?.scale(dpr, dpr);
       canvasRef.current = { canvas, w, h };
       redraw();

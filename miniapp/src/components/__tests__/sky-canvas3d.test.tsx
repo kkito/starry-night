@@ -19,6 +19,11 @@ vi.mock('@starry/sky-core/lib/sky-scene', () => ({
   drawSkyScene: vi.fn(() => new Map([['s1', { x: 100, y: 80 }]])),
 }));
 
+function makeWeappCanvasNode() {
+  // weapp 的 canvas 2d node 是原生节点：无 DOM .style（回归用例——曾因 node.style 未判空崩溃）
+  return { width: 0, height: 0, getContext: () => ({ scale: () => {} }) };
+}
+
 function mockSelectorQuery() {
   const api: any = {
     select: () => api,
@@ -26,7 +31,7 @@ function mockSelectorQuery() {
     boundingClientRect: () => api,
     exec: (cb: (res: any[]) => void) => {
       cb([
-        { node: { width: 0, height: 0, style: {}, getContext: () => ({ scale: () => {} }) } },
+        { node: makeWeappCanvasNode() },
         { left: 0, top: 0, width: 375, height: 500 },
       ]);
     },
@@ -41,6 +46,11 @@ describe('SkyCanvas3D', () => {
   it('渲染 canvas 容器', () => {
     render(<SkyCanvas3D stars={[star('s1', 180, 25)]} track={null} selectedId={null} onSelect={vi.fn()} />);
     expect(screen.getByTestId('skydome-3d')).toBeTruthy();
+  });
+  it('weapp node 无 style 时初始化不崩溃（真机回归）', () => {
+    expect(() =>
+      render(<SkyCanvas3D stars={[star('s1', 180, 25)]} track={null} selectedId={null} onSelect={vi.fn()} />),
+    ).not.toThrow();
   });
   it('选中星显示 tooltip', () => {
     render(<SkyCanvas3D stars={[star('s1', 180, 25)]} track={null} selectedId="s1" onSelect={vi.fn()} />);
