@@ -13,7 +13,7 @@
 - 只做 weapp 构建，不做 H5（`build:h5` 相关配置/脚本一律不建）。
 - 无 `three`、无 vendor UMD、无 stub、无构建后拷贝脚本；允许且仅允许的非标配置：webpack babel include 指向 `packages/sky-core/src`（共享源码，非 three hack）。
 - 小程序 canvas 坑位沿用旧项目经验：canvas rect 必须 `createSelectorQuery().boundingClientRect()`、DPR 封顶 2、无 rAF 用 `setTimeout(…, 16)` 兜底。
-- 交互手感与 web 对齐：`yaw -= dx*0.003`、`pitch += dy*0.002`（下限 0.9×半视场、上限 1.2）、fov∈[30,100]、tap 容差 3px、点选半径 22px。
+- 交互手感与 web 对齐：`yaw -= dx*0.003`、`pitch += dy*0.002`（下限 0.9×半视场、上限 1.2）、fov∈[30,100]、tap 容差 3px（web 鼠标）/触屏 touch slop 12px（TAP_SLOP_PX，承旧 Sky3DAdapter 实测，Task 3 评审裁决 2026-09-19）、点选半径 22px。
 - 旧代码参考基线：`git show dd7f5c5:miniapp/...`（dd7f5c5 = 重写前最后一个提交）。
 - 验证：`pnpm test`（根，vitest 一并跑 miniapp 测试）、`pnpm build:weapp`（miniapp 目录内）、体积门禁脚本。
 
